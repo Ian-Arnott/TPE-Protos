@@ -40,7 +40,7 @@ user(char *s, struct users *user) {
 static void
 version(void) {
     fprintf(stderr, "socks5v version 0.0\n"
-                    "ITBA Protocolos de Comunicación 2020/1 -- Grupo X\n"
+                    "ITBA Protocolos de Comunicación 2023/2 -- Grupo 6\n"
                     "AQUI VA LA LICENCIA\n");
 }
 
@@ -74,10 +74,10 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
 
     args->socks_addr = "0.0.0.0";
     args->socks_port = 1080;
-
+// ACA VAMOS A CAMBIAR EL PUERTO 110
     args->mng_addr   = "127.0.0.1";
     args->mng_port   = 8080;
-
+// HABRIA QUE INVESTIGAR DESDE QUE PUERTO HACEMOS MANAGEMENT
     args->disectors_enabled = true;
 
     args->doh.host = "localhost";
