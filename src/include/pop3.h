@@ -11,6 +11,7 @@ typedef struct {
     bool auth; 
     char username[128];
     inbox_state * inbox;
+    int inbox_size;
     int socket_fd;
 } user_state;
 
@@ -54,7 +55,7 @@ int pass(user_state * user, char * args);
 /**
  * LIST command
 */
-int list(user_state * user);
+void list(user_state * user);
 
 /**
  * RETR command
