@@ -3,11 +3,13 @@
 
 #include <stdbool.h>
 
+
+// USER
 typedef struct {
-    char read[1024]; // identificador de la instruccion
-    char write[1024]; // identificadores de parametros
-    int read_idx;
-    int write_idx;
+    // char read[1024]; // identificador de la instruccion
+    // char write[1024]; // identificadores de parametros
+    // int read_idx;
+    // int write_idx;
     bool auth; 
     char username[128];
     inbox_state * inbox;
@@ -26,6 +28,12 @@ typedef struct {
     int size;
     bool to_delete;
 }mail;
+
+//BACK
+// queue
+// authentication service
+// deletion service
+//
 
 
 // back
