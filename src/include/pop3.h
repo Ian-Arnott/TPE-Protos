@@ -6,6 +6,18 @@
 
 // USER
 typedef struct {
+    char content[2048]; //TODO: buscar tamano de los mails
+    int size;
+    bool to_delete;
+}mail;
+
+typedef struct {
+    int idx;
+    int size;
+    mail * ptr;
+} inbox_state;
+
+typedef struct {
     // char read[1024]; // identificador de la instruccion
     // char write[1024]; // identificadores de parametros
     // int read_idx;
@@ -17,17 +29,9 @@ typedef struct {
     int socket_fd;
 } user_state;
 
-typedef struct {
-    int idx;
-    int size;
-    mail * ptr;
-} inbox_state;
 
-typedef struct {
-    char content[2048]; //TODO: buscar tamano de los mails
-    int size;
-    bool to_delete;
-}mail;
+
+
 
 //BACK
 // queue

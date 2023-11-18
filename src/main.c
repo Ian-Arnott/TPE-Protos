@@ -24,7 +24,7 @@
 #include <netinet/tcp.h>
 
 // #include "socks5.h"
-#include "selector.h"
+#include "include/selector.h"
 // #include "socks5nio.h"
 
 static bool done = false;
@@ -118,7 +118,7 @@ main(const int argc, const char **argv) {
         goto finally;
     }
     const struct fd_handler socksv5 = {
-        .handle_read       = socksv5_passive_accept,
+        .handle_read       = NULL, // antes habia otra cosa
         .handle_write      = NULL,
         .handle_close      = NULL, // nada que liberar
     };
@@ -157,7 +157,7 @@ finally:
     }
     selector_close();
 
-    socksv5_pool_destroy();
+    // socksv5_pool_destroy();
 
     if(server >= 0) {
         close(server);

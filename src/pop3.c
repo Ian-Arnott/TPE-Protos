@@ -16,7 +16,7 @@
 // #include "request.h"
 #include "buffer.h"
 
-#include "stm.h"
+// #include "stm.h"
 #include "pop3.h"
 #include "netutils.h"
 

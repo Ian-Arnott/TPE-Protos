@@ -15,9 +15,15 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/signal.h>
-#include "selector.h"
+#include "include/selector.h"
 
 #define N(x) (sizeof(x)/sizeof((x)[0]))
+
+extern int pselect (int __nfds, fd_set *__restrict __readfds,
+		    fd_set *__restrict __writefds,
+		    fd_set *__restrict __exceptfds,
+		    const struct timespec *__restrict __timeout,
+		    const __sigset_t *__restrict __sigmask);
 
 #define ERROR_DEFAULT_MSG "something failed"
 
@@ -51,6 +57,10 @@ selector_error(const selector_status status) {
 static void
 wake_handler(const int signal) {
     // nada que hacer. está solo para interrumpir el select
+    if (signal){
+        //do nothing
+    }
+    return;
 }
 
 // señal a usar para las notificaciones de resolución
