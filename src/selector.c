@@ -11,10 +11,14 @@
 #include <stdint.h> // SIZE_MAX
 #include <unistd.h>
 #include <fcntl.h>
+// #include <sys/types.h>
+// #include <sys/socket.h>
+// #include <sys/select.h>
+// #include <sys/signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include "include/selector.h"
 
 #define N(x) (sizeof(x)/sizeof((x)[0]))
