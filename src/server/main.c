@@ -42,11 +42,22 @@ main(const int argc, const char **argv) {
     
 
     // unsigned port = 8082;
-
     struct popargs args;
+
 
     parse_args(argc, argv, &args);
 
+    printf("Estos son los argumentos.\n Puerto: %d. \n", args.pop_port);
+    for (unsigned int i = 0; i < args.user_count; i++)
+    {
+        printf("User %d : %s : %s\n", i, args.users[i].name, args.users[i].pass);
+    }
+    
+
+    close(STDIN_FILENO);
+
+    
+    
 /*
 //     if(argc == 1) {
 //         // utilizamos el default

@@ -37,7 +37,7 @@
 struct users {
     char name[MAX_USER_LENGTH];
     char pass[MAX_USER_LENGTH];
-
+    
 
     // struct para el estado del inbox al hacer login
 };
@@ -72,7 +72,6 @@ struct popargs {
     struct users    users[MAX_USERS];
     unsigned int    user_count;
 };
-
 
 /**
  * Interpreta la linea de comandos (argc, argv) llenando

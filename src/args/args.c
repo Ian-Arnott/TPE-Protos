@@ -7,6 +7,10 @@
 
 #include "args.h"
 
+#define MAX_PORT 65535
+
+// popargs args;
+
 static unsigned short
 port(const char *s) {
      char *end     = 0;
@@ -94,6 +98,7 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
 
     bool error = false;
 	for ( int i = 1; i < argc && !error; i++){
+        
 		if(strcmp(argv[i],"-u") == 0){
 			if ( i + 1 < argc){
 				args->user_count++;
@@ -105,21 +110,23 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
                     error = true;
                 }
 				user(argv[i + 1],&args->users[args->user_count - 1]);
-                // if ( !checkUserAndPasswordFormat(args->users[args->user_count - 1])){
-                //     error = true;
-                // }
 				i++;
 			} else {
                 // TODO: Logger
 				// log(ERROR,"%s","Invalid Usage: format -u must be followed by user:pass\n");
 				error = true;
 			}
-		} 
+		}else if (i == 1){
+            args->pop_port = port(argv[i]);
+        } // PORT
 	}
     if (error){
-        printf("ERROR. Invalid arguments");
+        // TODO: Logger
+        printf("ERROR. Invalid arguments\n");
         exit(1);
     }
+
+    
     // while (true) {
     //     int option_index = 0;
     //     static struct option long_options[] = {
