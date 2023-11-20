@@ -2,6 +2,7 @@
 #define POP3_H_
 
 #include <stdbool.h>
+#include "../selector/selector.h"
 
 
 // USER
@@ -30,8 +31,10 @@ typedef struct {
 } user_state;
 
 
+// HANDLERS
+void accept_connection_handler(struct selector_key * key);
 
-
+void user_write_handler(struct selector_key * key);
 
 //BACK
 // queue
