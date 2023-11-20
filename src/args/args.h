@@ -3,11 +3,43 @@
 
 #include <stdbool.h>
 
-#define MAX_USERS 10
+#include "../clients/auth.h"
+
+#define MAX_USERS 1024
+#define MAX_USER_LENGTH 64
+
+// // USER
+// typedef struct {
+//     char content[2048]; //TODO: buscar tamano de los mails
+//     int size;
+//     bool to_delete;
+// }mail;
+
+// typedef struct {
+//     int idx;
+//     int size;
+//     mail * ptr;
+// } inbox_state;
+
+// typedef struct {
+//     // char read[1024]; // identificador de la instruccion
+//     // char write[1024]; // identificadores de parametros
+//     // int read_idx;
+//     // int write_idx;
+//     bool auth; 
+//     char username[128];
+//     inbox_state * inbox;
+//     int inbox_size;
+//     int socket_fd;
+// } user_state;
+
 
 struct users {
-    char *name;
-    char *pass;
+    char name[MAX_USER_LENGTH];
+    char pass[MAX_USER_LENGTH];
+
+
+    // struct para el estado del inbox al hacer login
 };
 
 struct doh {
@@ -19,17 +51,28 @@ struct doh {
 };
 
 struct socks5args {
-    char           *socks_addr;
-    unsigned short  socks_port;
+    char           *socks_addr; // localhost
+    unsigned short  socks_port; // 110
 
-    char *          mng_addr;
-    unsigned short  mng_port;
+    char *          mng_addr; // localhost
+    unsigned short  mng_port; // 9090
 
-    bool            disectors_enabled;
+    bool            disectors_enabled; // ???
 
     struct doh      doh;
     struct users    users[MAX_USERS];
 };
+
+struct popargs {
+    char           *pop_addr; // localhost
+    unsigned short  pop_port; // 110
+    char *          mng_addr; // localhost
+    unsigned short  mng_port; // 9090
+    
+    struct users    users[MAX_USERS];
+    unsigned int    user_count;
+};
+
 
 /**
  * Interpreta la linea de comandos (argc, argv) llenando
@@ -37,7 +80,7 @@ struct socks5args {
  * la ejecución.
  */
 void 
-parse_args(const int argc, char **argv, struct socks5args *args);
+parse_args(const int argc, const char **argv, struct popargs *args);
 
 #endif
 

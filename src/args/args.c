@@ -23,7 +23,7 @@ port(const char *s) {
 }
 
 static void
-user(char *s, struct users *user) {
+user(const char *s, struct users *user) {
     char *p = strchr(s, ':');
     if(p == NULL) {
         fprintf(stderr, "password not found\n");
@@ -31,15 +31,16 @@ user(char *s, struct users *user) {
     } else {
         *p = 0;
         p++;
-        user->name = s;
-        user->pass = p;
+        strcpy(user->name, s);
+        strcpy(user->pass, p);
+
     }
 
 }
 
 static void
 version(void) {
-    fprintf(stderr, "socks5v version 0.0\n"
+    fprintf(stderr, "POP3 version 1.0\n"
                     "ITBA Protocolos de Comunicación 2023/2 -- Grupo 6\n"
                     "AQUI VA LA LICENCIA\n");
 }
@@ -68,101 +69,110 @@ usage(const char *progname) {
     exit(1);
 }
 
+
 void 
-parse_args(const int argc, char **argv, struct socks5args *args) {
+parse_args(const int argc, const char **argv, struct popargs *args) {
     memset(args, 0, sizeof(*args)); // sobre todo para setear en null los punteros de users
 
-    args->socks_addr = "0.0.0.0";
-    args->socks_port = 1080;
+    args->pop_addr = "127.0.0.1";
+    args->pop_port = 1110;
 // ACA VAMOS A CAMBIAR EL PUERTO 110
     args->mng_addr   = "127.0.0.1";
     args->mng_port   = 8080;
-// HABRIA QUE INVESTIGAR DESDE QUE PUERTO HACEMOS MANAGEMENT
-    args->disectors_enabled = true;
 
-    args->doh.host = "localhost";
-    args->doh.ip   = "127.0.0.1";
-    args->doh.port = 8053;
-    args->doh.path = "/getnsrecord";
-    args->doh.query = "?dns=";
+    if ( argc <= 2){
+        // TODO: Logger
+		printf("ERROR Invalid arguments, usage <PORT> -u user1:password1 -u user2:password2 ...");
+        // log(ERROR,"%s","Invalid arguments, usage <PORT> -u user1:password1 -u user2:password2 ...");
+		exit(1);
+	}
 
-    int c;
-    int nusers = 0;
+    // int c;
+    // int nusers = 0;
+    
+// TODO: parse users and create their data
 
-    while (true) {
-        int option_index = 0;
-        static struct option long_options[] = {
-            { "doh-ip",    required_argument, 0, 0xD001 },
-            { "doh-port",  required_argument, 0, 0xD002 },
-            { "doh-host",  required_argument, 0, 0xD003 },
-            { "doh-path",  required_argument, 0, 0xD004 },
-            { "doh-query", required_argument, 0, 0xD005 },
-            { 0,           0,                 0, 0 }
-        };
-
-        c = getopt_long(argc, argv, "hl:L:Np:P:u:v", long_options, &option_index);
-        if (c == -1)
-            break;
-
-        switch (c) {
-            case 'h':
-                usage(argv[0]);
-                break;
-            case 'l':
-                args->socks_addr = optarg;
-                break;
-            case 'L':
-                args->mng_addr = optarg;
-                break;
-            case 'N':
-                args->disectors_enabled = false;
-                break;
-            case 'p':
-                args->socks_port = port(optarg);
-                break;
-            case 'P':
-                args->mng_port   = port(optarg);
-                break;
-            case 'u':
-                if(nusers >= MAX_USERS) {
-                    fprintf(stderr, "maximun number of command line users reached: %d.\n", MAX_USERS);
-                    exit(1);
-                } else {
-                    user(optarg, args->users + nusers);
-                    nusers++;
+    bool error = false;
+	for ( int i = 1; i < argc && !error; i++){
+		if(strcmp(argv[i],"-u") == 0){
+			if ( i + 1 < argc){
+				args->user_count++;
+				if ( args->users == NULL){
+                    // TODO: Logger
+					// log(FATAL,"%s","NO MEMORY");
+				}
+                if ( !parse_user_and_password(argv[i + 1])){
+                    error = true;
                 }
-                break;
-            case 'v':
-                version();
-                exit(0);
-                break;
-            case 0xD001:
-                args->doh.ip = optarg;
-                break;
-            case 0xD002:
-                args->doh.port = port(optarg);
-                break;
-            case 0xD003:
-                args->doh.host = optarg;
-                break;
-            case 0xD004:
-                args->doh.path = optarg;
-                break;
-            case 0xD005:
-                args->doh.query = optarg;
-                break;
-            default:
-                fprintf(stderr, "unknown argument %d.\n", c);
-                exit(1);
-        }
-
-    }
-    if (optind < argc) {
-        fprintf(stderr, "argument not accepted: ");
-        while (optind < argc) {
-            fprintf(stderr, "%s ", argv[optind++]);
-        }
-        fprintf(stderr, "\n");
+				user(argv[i + 1],&args->users[args->user_count - 1]);
+                // if ( !checkUserAndPasswordFormat(args->users[args->user_count - 1])){
+                //     error = true;
+                // }
+				i++;
+			} else {
+                // TODO: Logger
+				// log(ERROR,"%s","Invalid Usage: format -u must be followed by user:pass\n");
+				error = true;
+			}
+		} 
+	}
+    if (error){
+        printf("ERROR. Invalid arguments");
         exit(1);
     }
+    // while (true) {
+    //     int option_index = 0;
+    //     static struct option long_options[] = {
+    //         { "doh-ip",    required_argument, 0, 0xD001 },
+    //         { "doh-port",  required_argument, 0, 0xD002 },
+    //         { "doh-host",  required_argument, 0, 0xD003 },
+    //         { "doh-path",  required_argument, 0, 0xD004 },
+    //         { "doh-query", required_argument, 0, 0xD005 },
+    //         { 0,           0,                 0, 0 }
+    //     };
+
+    //     c = getopt_long(argc, argv, "hl:L:Np:P:u:v", long_options, &option_index);
+    //     if (c == -1)
+    //         break;
+
+    //     switch (c) {
+    //         case 'h':
+    //             usage(argv[0]);
+    //             break;
+    //         case 'l':
+    //             args->pop_addr = optarg;
+    //             break;
+    //         case 'L':
+    //             args->mng_addr = optarg;
+    //             break;
+    //         case 'P':
+    //             args->mng_port   = port(optarg);
+    //             break;
+    //         case 'u':
+    //             if(nusers >= MAX_USERS) {
+    //                 fprintf(stderr, "maximun number of command line users reached: %d.\n", MAX_USERS);
+    //                 exit(1);
+    //             } else {
+    //                 user(optarg, args->users + nusers);
+    //                 nusers++;
+    //             }
+    //             break;
+    //         case 'v':
+    //             version();
+    //             exit(0);
+    //             break;
+    //         default:
+    //             fprintf(stderr, "unknown argument %d.\n", c);
+    //             exit(1);
+    //     }
+
+    // }
+    // if (optind < argc) {
+    //     fprintf(stderr, "argument not accepted: ");
+    //     while (optind < argc) {
+    //         fprintf(stderr, "%s ", argv[optind++]);
+    //     }
+    //     fprintf(stderr, "\n");
+    //     exit(1);
+    // }
 }

@@ -27,6 +27,7 @@
 // #include "socks5.h"
 // #include "include/selector.h"
 // #include "socks5nio.h"
+#include "../args/args.h"
 
 static bool done = false;
 
@@ -38,9 +39,15 @@ sigterm_handler(const int signal) {
 
 int
 main(const int argc, const char **argv) {
+    
 
-//     unsigned port = 1080;
+    // unsigned port = 8082;
 
+    struct popargs args;
+
+    parse_args(argc, argv, &args);
+
+/*
 //     if(argc == 1) {
 //         // utilizamos el default
 //     } else if(argc == 2) {
@@ -164,5 +171,5 @@ main(const int argc, const char **argv) {
 //     if(server >= 0) {
 //         close(server);
 //     }
-//     return ret;
+//     return ret;*/
 }
