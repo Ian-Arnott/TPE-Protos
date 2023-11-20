@@ -14,11 +14,11 @@
 
 // #include "hello.h"
 // #include "request.h"
-#include "buffer.h"
+#include "../buffer/buffer.h"
 
 // #include "stm.h"
 #include "pop3.h"
-#include "netutils.h"
+#include "../net/netutils.h"
 
 void list(user_state * user) {
     if (!user->auth)
