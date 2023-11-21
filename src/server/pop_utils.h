@@ -1,6 +1,7 @@
 #ifndef POP_UTILS_H_
 #define POP_UTILS_H_
 
+#include <stdlib.h>
 #include "pop3.h"
 
 

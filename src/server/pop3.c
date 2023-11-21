@@ -82,29 +82,31 @@ void client_write(struct selector_key *key) {
 void accept_connection_handler(struct selector_key *key) {
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
-    const int client = accept(key->fd, (struct sockaddr *)&client_addr, &client_addr_len);
+    const int client_fd = accept(key->fd, (struct sockaddr *)&client_addr, &client_addr_len);
     
-    connection * clients = key->data;
+    connection * client = calloc(1, sizeof(connection));
 
-    if (client == -1) {
+    if (client_fd == -1) {
         goto fail;
     }
 
     // Convierte en non blocking el socket nuevo.
-    if (selector_fd_set_nio(client) == -1) {
+    if (selector_fd_set_nio(client_fd) == -1) {
         goto fail;
     }
 
-    // Almacenar la conexión (suponiendo que esta función existe y funciona correctamente).
-    int new_idx = store_connection(client, (connection *)key->data);
-    if ( new_idx < 0) {
-        goto fail;
-    }
+    // // Almacenar la conexión (suponiendo que esta función existe y funciona correctamente).
+    // int new_idx = store_connection(client, (connection *)key->data);
+    // if ( new_idx < 0) {
+    //     goto fail;
+    // }
+
+    log(INFO,"%s", "Initialized selector, will initialize STM.\n" )
     
-    clients[new_idx].stm.states = stm_states_table;
-    clients[new_idx].stm.initial = AUTHORIZATION;
-    clients[new_idx].stm.max_state = STM_STATES_COUNT;
-    stm_init(&clients[new_idx].stm);
+    client->stm.states = stm_states_table;
+    client->stm.initial = AUTHORIZATION;
+    client->stm.max_state = STM_STATES_COUNT;
+    stm_init(&client->stm);
 
     // buffer_init(&connection->in_buffer_object, BUFFER_SIZE, (uint8_t *) connection->in_buffer);
     // buffer_init(&connection->out_buffer_object, BUFFER_SIZE, (uint8_t *) connection->out_buffer);
@@ -116,16 +118,20 @@ void accept_connection_handler(struct selector_key *key) {
     // connection->current_session.requested_quit = false;
 
     // Registrar el nuevo socket cliente con el selector.
-    if (selector_register(key->s, client, &client_handler, OP_READ, &clients[new_idx]) != SELECTOR_SUCCESS) {
+    if (selector_register(key->s, client_fd, &client_handler, OP_READ, client) != SELECTOR_SUCCESS) {
         goto fail;
     }
 
-    write(STDOUT_FILENO, "Stored User\n", 13);
+    log(DEBUG,"%s","Established new POP3 connection");
     return;
 
 fail:
-    if (client != -1) {
-        close(client);
+    log(LOG_ERROR,"%s","FAIL! Could not accept connection\n");
+    if (client_fd != -1) {
+        free(client);
+        close(client_fd);
+        log(LOG_ERROR,"%s","FREED resources\n");
+
     }
 }
 
@@ -186,13 +192,13 @@ int store_connection(int socket_fd, connection * clients){
     int idx = get_user_buffer_idx(clients);
     if (idx == -1){
         //TODO: Logger
-        printf("ERROR. No more connections are allowed right now. Try again later\n");
+        log(LOG_ERROR,"%s","ERROR. No more connections are allowed right now. Try again later\n");
         return -1;
     }
 
     clients[idx].socket = socket_fd;
     clients[idx].active = true;
-    printf("Estoy por hacer store del socket_fd: %d que se va a guardar en el client[%d]", clients[idx].socket, idx);
+    log(INFO,"Estoy por hacer store del socket_fd: %d que se va a guardar en el client[%d]", clients[idx].socket, idx);
 
     return idx;
 

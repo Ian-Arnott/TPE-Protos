@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "../selector/selector.h"
 #include "../selector/stm.h"
+#include "../logger/logger.h"
 
 #define MAX_CLIENTS 512
 
