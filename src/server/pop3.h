@@ -9,11 +9,12 @@
 
 
 typedef enum {
-    ANY,
-    AUTHENTICATION,
+    AUTHORIZATION = 0,
     TRANSACTION,
-    UPDATE,
-} pop_state;
+    ERROR,
+    QUIT,
+    STM_STATES_COUNT
+} stm_states;
 
 // USER
 typedef struct {

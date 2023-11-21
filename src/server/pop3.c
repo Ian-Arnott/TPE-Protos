@@ -16,7 +16,39 @@
 // #include "request.h"
 #include "../buffer/buffer.h"
 #include "pop3.h"
+#include "pop_utils.h"
 #include "../net/netutils.h"
+
+struct state_definition stm_states_table[] = {
+        {
+                .state = AUTHORIZATION,
+                .on_arrival = authorization_arrival,
+                .on_departure = authorization_departure,
+                .on_read_ready = authorization_read,
+                .on_write_ready = authorization_write
+        },
+        {
+                .state = TRANSACTION,
+                .on_arrival = transaction_arrival,
+                .on_departure = transaction_departure,
+                .on_read_ready = transaction_read,
+                .on_write_ready = transaction_write
+        },
+        {
+                .state = ERROR,
+                .on_arrival = error_arrival,
+                .on_departure = error_departure,
+                .on_read_ready = error_read,
+                .on_write_ready = error_write
+        },
+        {
+                .state = QUIT,
+                .on_arrival = quit_arrival,
+                .on_departure = quit_departure,
+                .on_read_ready = quit_read,
+                .on_write_ready = quit_write
+        }
+};
 
 // Ejemplo de fd_handler para el cliente
 static const struct fd_handler client_handler = {
@@ -25,6 +57,16 @@ static const struct fd_handler client_handler = {
     .handle_close = client_close, // Función que maneja el cierre.
     // .handle_block = NULL,       // Si tienes un handler para operaciones bloqueantes.
 };
+
+static int get_idx_of_connection(int socket, connection * clients){
+    for (int i = 0 ; i < MAX_CLIENTS ; i++){
+        if (clients[i].socket == socket && clients[i].active){
+            return i;
+        }
+    }
+    return -1;
+
+}
 
 void client_close(struct selector_key *key) {
 }
@@ -41,6 +83,8 @@ void accept_connection_handler(struct selector_key *key) {
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
     const int client = accept(key->fd, (struct sockaddr *)&client_addr, &client_addr_len);
+    
+    connection * clients = key->data;
 
     if (client == -1) {
         goto fail;
@@ -52,12 +96,27 @@ void accept_connection_handler(struct selector_key *key) {
     }
 
     // Almacenar la conexión (suponiendo que esta función existe y funciona correctamente).
-    if (store_connection(client, (connection *)key->data) == 1) {
+    int new_idx = store_connection(client, (connection *)key->data);
+    if ( new_idx < 0) {
         goto fail;
     }
+    
+    clients[new_idx].stm.states = stm_states_table;
+    clients[new_idx].stm.initial = AUTHORIZATION;
+    clients[new_idx].stm.max_state = STM_STATES_COUNT;
+    stm_init(&clients[new_idx].stm);
+
+    // buffer_init(&connection->in_buffer_object, BUFFER_SIZE, (uint8_t *) connection->in_buffer);
+    // buffer_init(&connection->out_buffer_object, BUFFER_SIZE, (uint8_t *) connection->out_buffer);
+    // connection->parser = parser_init(parser_no_classes(), &parser_definition);
+    // connection->last_state = -1;
+    // connection->current_command.mail_fd = -1;
+    // buffer_init(&connection->current_command.mail_buffer_object, BUFFER_SIZE, (uint8_t *) connection->current_command.mail_buffer);
+    // connection->current_session.mails = calloc(args.max_mails, sizeof(struct mail));
+    // connection->current_session.requested_quit = false;
 
     // Registrar el nuevo socket cliente con el selector.
-    if (selector_register(key->s, client, &client_handler, OP_READ, key->data) != SELECTOR_SUCCESS) {
+    if (selector_register(key->s, client, &client_handler, OP_READ, &clients[new_idx]) != SELECTOR_SUCCESS) {
         goto fail;
     }
 
@@ -128,14 +187,14 @@ int store_connection(int socket_fd, connection * clients){
     if (idx == -1){
         //TODO: Logger
         printf("ERROR. No more connections are allowed right now. Try again later\n");
-        return 1;
+        return -1;
     }
 
     clients[idx].socket = socket_fd;
     clients[idx].active = true;
     printf("Estoy por hacer store del socket_fd: %d que se va a guardar en el client[%d]", clients[idx].socket, idx);
 
-    return 0;
+    return idx;
 
 }
 

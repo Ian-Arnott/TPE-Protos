@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <ctype.h>
+#include "../logger/logger.h"
 
 #define MAX_USERS 1024
 #define MAX_USER_LENGTH 64

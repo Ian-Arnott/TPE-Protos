@@ -85,9 +85,7 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
     args->mng_port   = 8080;
 
     if ( argc <= 2){
-        // TODO: Logger
-		printf("ERROR Invalid arguments, usage <PORT> -u user1:password1 -u user2:password2 ...");
-        // log(ERROR,"%s","Invalid arguments, usage <PORT> -u user1:password1 -u user2:password2 ...");
+        log(LOG_ERROR,"%s", "ERROR Invalid arguments, usage <PORT> -u user1:password1 -u user2:password2 ...");
 		exit(1);
 	}
 
@@ -113,7 +111,7 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
 				i++;
 			} else {
                 // TODO: Logger
-				// log(ERROR,"%s","Invalid Usage: format -u must be followed by user:pass\n");
+				log(LOG_ERROR,"%s","Invalid Usage: format -u must be followed by user:pass\n");
 				error = true;
 			}
 		}else if (i == 1){
@@ -122,7 +120,7 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
 	}
     if (error){
         // TODO: Logger
-        printf("ERROR. Invalid arguments\n");
+        log(LOG_ERROR,"%s", ". Invalid arguments\n");
         exit(1);
     }
 

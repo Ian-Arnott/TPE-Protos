@@ -1,7 +1,7 @@
 #ifndef LOGGER_H_
 #define LOGGER_H_
 
-typedef enum {DEBUG=0, INFO, ERROR, FATAL} LOG_LEVEL;
+typedef enum {DEBUG=0, INFO, LOG_ERROR, FATAL} LOG_LEVEL;
 
 extern LOG_LEVEL current_level;
 
