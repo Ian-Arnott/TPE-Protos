@@ -127,7 +127,7 @@ main(const int argc, const char **argv) {
 
     const struct fd_handler pop3_handler = {
         .handle_read       = accept_connection_handler, // antes habia otra cosa
-        .handle_write      = user_write_handler,
+        .handle_write      = NULL,
         .handle_close      = NULL, // nada que liberar
     };
 
