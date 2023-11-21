@@ -24,11 +24,13 @@
 #include <netinet/tcp.h>
 
 #include <stdbool.h>
-#include "../selector/selector.h"
+// #include "../selector/selector.h"
 #include "../args/args.h"
 #include "pop3.h"
 
 static bool done = false;
+
+
 
 static void
 sigterm_handler(const int signal) {
@@ -38,6 +40,9 @@ sigterm_handler(const int signal) {
 
 int
 main(const int argc, const char **argv) {
+
+    connection clients[MAX_CLIENTS];
+    memset(&clients,0,sizeof(clients));
     
 
     // unsigned port = 8082;
@@ -92,6 +97,13 @@ main(const int argc, const char **argv) {
     signal(SIGTERM, sigterm_handler);
     signal(SIGINT,  sigterm_handler);
 
+    // user_data usersData[MAX_CONNECTIONS];
+    // memset(usersData,0,sizeof(usersData));
+    // for (int i = 0; i < MAX_CONNECTIONS; i++){
+    //     usersData[i].socket = NOT_ALLOCATED;
+    //     usersData[i].commandState = AVAILABLE;
+    // }
+
     if(selector_fd_set_nio(server) == -1) {
         err_msg = "getting server socket flags";
         goto finally;
@@ -107,19 +119,19 @@ main(const int argc, const char **argv) {
         err_msg = "initializing selector";
         goto finally;
     }
-
     selector = selector_new(1024);
     if(selector == NULL) {
         err_msg = "unable to create selector";
         goto finally;
     }
+
     const struct fd_handler pop3_handler = {
         .handle_read       = accept_connection_handler, // antes habia otra cosa
         .handle_write      = user_write_handler,
         .handle_close      = NULL, // nada que liberar
     };
 
-    ss = selector_register(selector, server, &pop3_handler,OP_READ, NULL);
+    ss = selector_register(selector, server, &pop3_handler,OP_READ, (void *) clients);
     if(ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd";
         goto finally;
@@ -140,7 +152,7 @@ main(const int argc, const char **argv) {
 
     int ret = 0;
     
-finally:
+    finally:
     if(ss != SELECTOR_SUCCESS) {
         fprintf(stderr, "%s: %s\n", (err_msg == NULL) ? "": err_msg,
                                   ss == SELECTOR_IO

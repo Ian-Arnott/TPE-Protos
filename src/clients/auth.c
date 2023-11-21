@@ -3,6 +3,7 @@
 #include "auth.h"
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 bool parse_user_and_password(const char * string){
     int idx; // current char
@@ -23,6 +24,30 @@ bool parse_user_and_password(const char * string){
         return false;
     }
     return true;
+}
+
+int store_connection(int socket_fd, connection * clients){
+    int idx = get_user_buffer_idx(clients);
+    if (idx == -1){
+        //TODO: Logger
+        printf("ERROR. No more connections are allowed right now. Try again later\n");
+        return 1;
+    }
+
+    clients[idx].socket = socket_fd;
+    clients[idx].active = true;
+    printf("Estoy por hacer store del socket_fd: %d que se va a guardar en el client[%d]", clients[idx].socket, idx);
+
+    return 0;
+
+}
+
+int get_user_buffer_idx(connection * clients){
+    for (int i = 0 ; i < MAX_CLIENTS ; i++){
+        if (!clients[i].active)
+            return i;
+    }
+    return -1;
 }
 
 // static bool checkUserAndPasswordFormat(const char * str){

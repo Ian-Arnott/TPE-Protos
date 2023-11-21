@@ -4,6 +4,12 @@
 #include <stdbool.h>
 #include "../selector/selector.h"
 
+typedef enum {
+    ANY,
+    AUTHENTICATION,
+    TRANSACTION,
+    UPDATE,
+} pop_state;
 
 // USER
 typedef struct {
@@ -19,11 +25,9 @@ typedef struct {
 } inbox_state;
 
 typedef struct {
-    // char read[1024]; // identificador de la instruccion
-    // char write[1024]; // identificadores de parametros
-    // int read_idx;
-    // int write_idx;
-    bool auth; 
+    bool active;
+
+    bool auth;
     char username[128];
     inbox_state * inbox;
     int inbox_size;
@@ -33,29 +37,10 @@ typedef struct {
 
 // HANDLERS
 void accept_connection_handler(struct selector_key * key);
-
+void client_close(struct selector_key *key);
+void client_write(struct selector_key *key);
+void client_read(struct selector_key *key);
 void user_write_handler(struct selector_key * key);
-
-//BACK
-// queue
-// authentication service
-// deletion service
-//
-
-
-// back
-// ESTADO (casilla de mail)
-    // MAILS
-    // USERS
-    // PASS
-// DELE
-
-// DELE // RSET (marca para no borrar todos los mensajes)
-// back
-//adol USER -> PASS -> LIST -> RETRV
-//ian USER -> PASS ->PASS -> LIST
-
-// USER -> USER -> PASS -> LIST -> PASS -> PASS -> RETRV -> LIST
 
 /**
  * USER command
