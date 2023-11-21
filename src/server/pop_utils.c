@@ -1,50 +1,39 @@
 #include "pop_utils.h"
+#include <stdio.h>
+//#include <parser.h>
 
-void authorization_arrival(stm_states state, struct selector_key * key){}
-void authorization_departure(stm_states state, struct selector_key * key){}
-stm_states authorization_read(struct selector_key * key){
-    return 0;
-}
-stm_states authorization_write(struct selector_key * key){
-        return 0;
-
+// command state
+void parser_command_space(struct parser_event * ret, uint8_t c, void * data)
+{
+    
 }
 
-void transaction_arrival(stm_states state, struct selector_key * key){}
-void transaction_departure(stm_states state, struct selector_key * key){}
-stm_states transaction_read(struct selector_key * key){
-        return 0;
-
+void parser_command_return(struct parser_event * ret, uint8_t c, void * data)
+{
+    
 }
-stm_states transaction_write(struct selector_key * key){
-        return 0;
-
+void parser_command_any(struct parser_event * ret, uint8_t c, void * data)
+{
+    
 }
 
-void error_arrival(stm_states state, struct selector_key * key){}
-void error_departure(stm_states state, struct selector_key * key){}
-stm_states error_read(struct selector_key * key){
-        return 0;
+// argument state
+void parser_argument_any(struct parser_event * ret, uint8_t c, void * data)
+{
 
 }
-stm_states error_write(struct selector_key * key){
-        return 0;
+void parser_argument_return(struct parser_event * ret, uint8_t c, void * data)
+{
+    
+}
+
+//end state
+void parser_end_enter(struct parser_event * ret, uint8_t c, void * data)
+{
 
 }
 
-void quit_arrival(stm_states state, struct selector_key * key){
-    connection * client = (connection *) key->data;
-    if (client->active) {
-        log(DEBUG,"FD %d: Abort received", key->fd);
-        selector_unregister_fd(key->s, key->fd);
-    }
-}
-void quit_departure(stm_states state, struct selector_key * key){
-    abort();
-}
-stm_states quit_read(struct selector_key * key){    
-    abort();
-}
-stm_states quit_write(struct selector_key * key){    
-    abort();
+void parser_end_any(struct parser_event * ret, uint8_t c, void * data)
+{
+
 }

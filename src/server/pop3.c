@@ -1,7 +1,7 @@
 /**
  * pop3.c  - 
  */
-#include<stdio.h>
+#include <stdio.h>
 #include <stdlib.h>  // malloc
 #include <string.h>  // memset
 #include <assert.h>  // assert
@@ -9,15 +9,16 @@
 #include <time.h>
 #include <unistd.h>  // close
 #include <pthread.h>
-
+#include <stdint.h>
 #include <arpa/inet.h>
 
 // #include "hello.h"
 // #include "request.h"
 #include "../buffer/buffer.h"
 #include "pop3.h"
-#include "pop_utils.h"
 #include "../net/netutils.h"
+#include "pop3_stm_handlers.h"
+#include "pop_utils.h"
 
 struct state_definition stm_states_table[] = {
         {
@@ -49,6 +50,43 @@ struct state_definition stm_states_table[] = {
                 .on_write_ready = quit_write
         }
 };
+
+static const struct parser_state_transition parser_command[] = {
+        {.when = ' ', .dest = ARGUMENT, .act1 = parser_command_space},
+        {.when = '\r', .dest = END, .act1 = parser_command_return},
+        {.when = ANY, .dest = COMMAND, .act1 = parser_command_any}
+};
+
+static const struct parser_state_transition parser_argument[] = {
+        {.when = '\r', .dest = END, .act1 = parser_argument_return},
+        {.when = ANY, .dest = ARGUMENT, .act1 = parser_argument_any}
+};
+
+static const struct parser_state_transition parser_end[] = {
+        {.when = '\n', .dest = COMMAND, .act1 = parser_end_enter},
+        {.when = ANY, .dest = COMMAND, .act1 = parser_end_any}
+};
+
+static const struct parser_state_transition * parser_table[] = {
+        parser_command,
+        parser_argument,
+        parser_end
+};
+
+static const size_t states_dim[] = {
+        sizeof(parser_command) / sizeof(parser_command[0]),
+        sizeof(parser_argument) / sizeof(parser_argument[0]),
+        sizeof(parser_end) / sizeof(parser_end[0]),
+};
+
+struct parser_definition parser_deff = {
+    .states = parser_table,
+    .states_count = PARSER_STATES_COUNT,
+    .start_state = COMMAND,
+    .states_n = states_dim
+};
+
+
 
 // Ejemplo de fd_handler para el cliente
 static const struct fd_handler client_handler = {
@@ -107,8 +145,10 @@ void accept_connection_handler(struct selector_key *key) {
     client->stm.initial = AUTHORIZATION;
     client->stm.max_state = STM_STATES_COUNT;
     stm_init(&client->stm);
-
-    // buffer_init(&connection->in_buffer_object, BUFFER_SIZE, (uint8_t *) connection->in_buffer);
+    buffer_init(&client->command_buffer, MAX_BUFF_SIZE, (uint8_t *) client->command_buff);
+    buffer_init(&client->server_buffer, MAX_BUFF_SIZE, (uint8_t *) client->server_buff);
+    client->parser = parser_init(parser_no_classes(), &parser_deff);
+    
     // buffer_init(&connection->out_buffer_object, BUFFER_SIZE, (uint8_t *) connection->out_buffer);
     // connection->parser = parser_init(parser_no_classes(), &parser_definition);
     // connection->last_state = -1;

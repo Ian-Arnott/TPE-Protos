@@ -1,28 +1,26 @@
 #ifndef POP_UTILS_H_
 #define POP_UTILS_H_
 
-#include <stdlib.h>
-#include "pop3.h"
+#include "../parser/parser.h"
+
+typedef enum {
+    UNDEFINED,
+    VALID_COMMAND,
+    INVALID_COMMAND
+} parser_event_types;
 
 
-void authorization_arrival(stm_states state, struct selector_key * key);
-void authorization_departure(stm_states state, struct selector_key * key);
-stm_states authorization_read(struct selector_key * key);
-stm_states authorization_write(struct selector_key * key);
+// command state
+void parser_command_space(struct parser_event * ret, uint8_t c, void * data);
+void parser_command_return(struct parser_event * ret, uint8_t c, void * data);
+void parser_command_any(struct parser_event * ret, uint8_t c, void * data);
 
-void transaction_arrival(stm_states state, struct selector_key * key);
-void transaction_departure(stm_states state, struct selector_key * key);
-stm_states transaction_read(struct selector_key * key);
-stm_states transaction_write(struct selector_key * key);
+// argument state
+void parser_argument_any(struct parser_event * ret, uint8_t c, void * data);
+void parser_argument_return(struct parser_event * ret, uint8_t c, void * data);
 
-void error_arrival(stm_states state, struct selector_key * key);
-void error_departure(stm_states state, struct selector_key * key);
-stm_states error_read(struct selector_key * key);
-stm_states error_write(struct selector_key * key);
-
-void quit_arrival(stm_states state, struct selector_key * key);
-void quit_departure(stm_states state, struct selector_key * key);
-stm_states quit_read(struct selector_key * key);
-stm_states quit_write(struct selector_key * key);
+//end state
+void parser_end_enter(struct parser_event * ret, uint8_t c, void * data);
+void parser_end_any(struct parser_event * ret, uint8_t c, void * data);
 
 #endif
