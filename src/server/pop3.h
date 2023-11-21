@@ -3,6 +3,10 @@
 
 #include <stdbool.h>
 #include "../selector/selector.h"
+#include "../selector/stm.h"
+
+#define MAX_CLIENTS 512
+
 
 typedef enum {
     ANY,
@@ -34,6 +38,13 @@ typedef struct {
     int socket_fd;
 } user_state;
 
+typedef struct connection{
+    int socket;
+    struct state_machine stm;
+
+    bool active;
+}connection;
+
 
 // HANDLERS
 void accept_connection_handler(struct selector_key * key);
@@ -41,6 +52,10 @@ void client_close(struct selector_key *key);
 void client_write(struct selector_key *key);
 void client_read(struct selector_key *key);
 void user_write_handler(struct selector_key * key);
+
+// UTILS
+int store_connection(int socket_fd, connection * clients);
+int get_user_buffer_idx(connection * clients);
 
 /**
  * USER command

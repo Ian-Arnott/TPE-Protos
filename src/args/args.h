@@ -2,8 +2,7 @@
 #define ARGS_H_kFlmYm1tW9p5npzDr2opQJ9jM8
 
 #include <stdbool.h>
-
-#include "../clients/auth.h"
+#include <ctype.h>
 
 #define MAX_USERS 1024
 #define MAX_USER_LENGTH 64
@@ -80,6 +79,8 @@ struct popargs {
  */
 void 
 parse_args(const int argc, const char **argv, struct popargs *args);
+
+bool parse_user_and_password( const char * string);
 
 #endif
 

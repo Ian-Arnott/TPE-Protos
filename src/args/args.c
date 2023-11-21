@@ -182,4 +182,27 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
     //     fprintf(stderr, "\n");
     //     exit(1);
     // }
+
+    
+}
+
+bool parse_user_and_password(const char * string){
+    int idx; // current char
+    int length = 0;
+    bool flag = false; // found :
+    for (idx = 0; string[idx] != 0 ; idx++){
+        if (!flag && string[idx] == ':'){
+            flag = true;
+            length = 0; //reset the length counter
+        }else{
+            if (length >= MAX_USER_LENGTH || !isalnum(string[idx])){
+                return false;
+            }
+        }
+        length++;
+    }
+    if (idx < 1 || flag == false){ // idx < 2 for password length // flag to check : input
+        return false;
+    }
+    return true;
 }

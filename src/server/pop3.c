@@ -15,7 +15,6 @@
 // #include "hello.h"
 // #include "request.h"
 #include "../buffer/buffer.h"
-#include "../clients/auth.h"
 #include "pop3.h"
 #include "../net/netutils.h"
 
@@ -35,7 +34,7 @@ void client_read(struct selector_key *key) {
 }
 
 void client_write(struct selector_key *key) {
-    stm_handler_read(&((connection *)key->data)->stm, key);
+    stm_handler_write(&((connection *)key->data)->stm, key);
 }
 
 void accept_connection_handler(struct selector_key *key) {
@@ -123,3 +122,27 @@ void list(user_state * user) {
     }
     
  }
+
+int store_connection(int socket_fd, connection * clients){
+    int idx = get_user_buffer_idx(clients);
+    if (idx == -1){
+        //TODO: Logger
+        printf("ERROR. No more connections are allowed right now. Try again later\n");
+        return 1;
+    }
+
+    clients[idx].socket = socket_fd;
+    clients[idx].active = true;
+    printf("Estoy por hacer store del socket_fd: %d que se va a guardar en el client[%d]", clients[idx].socket, idx);
+
+    return 0;
+
+}
+
+int get_user_buffer_idx(connection * clients){
+    for (int i = 0 ; i < MAX_CLIENTS ; i++){
+        if (!clients[i].active)
+            return i;
+    }
+    return -1;
+}
