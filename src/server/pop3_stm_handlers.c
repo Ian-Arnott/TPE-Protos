@@ -1,7 +1,18 @@
 #include "pop3_stm_handlers.h"
 
 stm_states read_command(struct selector_key * key, stm_states current_state) {
+    connection * cliente = (connection*) key->data;
     log(INFO,"%s","read_command");
+    size_t to_read = 0;
+    char * ptr = buffer_read_ptr(&cliente->command_buffer, &to_read);
+        // ptr = (char *) buffer_read_ptr(&connection->in_buffer_object, &read_bytes);
+
+    // const struct parser_event * event = parser_feed(connection->parser, ptr[i], connection);
+    for ( size_t i = 0 ; i < to_read; i++)
+    {
+        const struct parser_event * event = parser_feed(cliente->parser, ptr[i]);
+    }
+    
     selector_set_interest_key(key,OP_READ);
     return current_state;
 }

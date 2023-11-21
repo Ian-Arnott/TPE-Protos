@@ -13,6 +13,13 @@
 
 
 typedef enum {
+    ANY_CHARACTER,
+    CR,
+    LF,
+    DOT
+} crlf_flag;
+
+typedef enum {
     AUTHORIZATION = 0,
     TRANSACTION,
     ERROR,
@@ -62,8 +69,28 @@ typedef struct connection{
     char server_buff[MAX_BUFF_SIZE];
 
     struct parser * parser;
+    stm_states last_states;
+
+    // comando current_comando;
 
 }connection;
+
+typedef struct comando
+{
+    // char comando[MAX_COMMAND_LEN + 1];
+    // char argumento[MAX_ARG_LEN + 1];
+    size_t comando_len;
+    size_t arg_len;
+
+    bool ended;
+    bool error;
+    size_t res_index;
+    int mail_fd;
+    int connec_fd;
+    crlf_flag crlf_flag;
+    
+};
+
 
 
 // typedef struct user_data{

@@ -2,6 +2,7 @@
 #define POP_UTILS_H_
 
 #include "../parser/parser.h"
+#include "pop3.h"
 
 typedef enum {
     UNDEFINED,
