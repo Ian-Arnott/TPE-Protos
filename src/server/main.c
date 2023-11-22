@@ -32,6 +32,7 @@ static bool done = false;
 
 
 
+
 static void
 sigterm_handler(const int signal) {
     printf("signal %d, cleaning up and exiting\n",signal);
@@ -46,6 +47,8 @@ main(const int argc, const char **argv) {
     
 
     // unsigned port = 8082;
+
+    // pop3 server data
     struct popargs args;
 
 
@@ -131,7 +134,7 @@ main(const int argc, const char **argv) {
         .handle_close      = NULL, // nada que liberar
     };
 
-    ss = selector_register(selector, server, &pop3_handler,OP_READ, (void *) clients);
+    ss = selector_register(selector, server, &pop3_handler,OP_READ, (void *) &args);
     if(ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd";
         goto finally;

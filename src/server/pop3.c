@@ -117,11 +117,16 @@ void client_write(struct selector_key *key) {
     stm_handler_write(&((connection *)key->data)->stm, key);
 }
 
-void accept_connection_handler(struct selector_key *key) {
+static struct popargs * args;
+
+void accept_connection_handler(struct selector_key *key) {  
+
+    args = (struct popargs *) key->data;
+
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
     const int client_fd = accept(key->fd, (struct sockaddr *)&client_addr, &client_addr_len);
-    
+
     connection * client = calloc(1, sizeof(connection));
 
     if (client_fd == -1) {
@@ -148,8 +153,7 @@ void accept_connection_handler(struct selector_key *key) {
     buffer_init(&client->command_buffer, MAX_BUFF_SIZE, (uint8_t *) client->command_buff);
     buffer_init(&client->server_buffer, MAX_BUFF_SIZE, (uint8_t *) client->server_buff);
     client->parser = parser_init(parser_no_classes(), &parser_deff);
-    
-    // connection->last_state = -1;
+    client->last_states = -1;
     // connection->current_command.mail_fd = -1;
     // buffer_init(&connection->current_command.mail_buffer_object, BUFFER_SIZE, (uint8_t *) connection->current_command.mail_buffer);
     // connection->current_session.mails = calloc(args.max_mails, sizeof(struct mail));
@@ -179,18 +183,18 @@ void user_write_handler(struct selector_key * key){
     // sendto(key->fd, to_print, bytes_to_send, 0, (struct sockaddr *) &client_addr, client_addr_len);
 }
 
-void list(user_state * user) {
-    if (!user->auth)
-    {
-        send(user->socket_fd, "ERROR\n", 7, 0);
-        return;
-    }else{
-        for (int i = 0 ; i < user->inbox_size ; i++){
+stm_states list(struct selector_key * key) {
+    // if (!user->auth)
+    // {
+    //     send(user->socket_fd, "ERROR\n", 7, 0);
+    //     return;
+    // }else{
+    //     for (int i = 0 ; i < user->inbox_size ; i++){
 
-        }
-        // open dir (maildir)
-        send(user->socket_fd, "OK! \n",5,0);
-    }
+    //     }
+    //     // open dir (maildir)
+    //     send(user->socket_fd, "OK! \n",5,0);
+    // }
     
  }
 
@@ -216,4 +220,151 @@ int get_user_buffer_idx(connection * clients){
             return i;
     }
     return -1;
+}
+
+stm_states user_write(struct selector_key * key) {
+    connection * client = (connection *) key->data;
+    size_t size;
+    char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
+    char * message = "+OK";
+    char * error_message = "-ERR Unknown User";
+    size_t message_size = strlen(message);
+    size_t error_message_size = strlen(error_message);
+    
+    if (client->command.has_error)
+    {
+        if (error_message_size > *str - 2) { //-2 por el \n\r
+            return AUTHORIZATION;
+        }
+        strncpy(str, error_message, error_message_size);
+        strncpy(str + error_message_size, "\r\n", 2);
+        *str = error_message_size + 2;
+    } else
+    {
+        if (message_size > *str - 2) { //-2 por el \n\r
+            return AUTHORIZATION;
+        }
+        strncpy(str, message, message_size);
+        strncpy(str + message_size, "\r\n", 2);
+        *str = message_size + 2;
+    }
+    buffer_write_adv(&client->server_buff,size);
+    client->command.has_finished = true;
+    return AUTHORIZATION;
+}
+
+stm_states pass_write(struct selector_key * key) {
+    connection * client = (connection *) key->data;
+    size_t size;
+    char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
+    char * message = "+OK Logged in.";
+    char * error_message = "-ERR Invalid Password";
+    size_t message_size = strlen(message);
+    size_t error_message_size = strlen(error_message);
+    
+    if (client->command.has_error)
+    {
+        if (error_message_size > *str - 2) { //-2 por el \n\r
+            return AUTHORIZATION;
+        }
+        strncpy(str, error_message, error_message_size);
+        strncpy(str + error_message_size, "\r\n", 2);
+        *str = error_message_size + 2;
+    } else
+    {
+        if (message_size > *str - 2) { //-2 por el \n\r
+            return AUTHORIZATION;
+        }
+        strncpy(str, message, message_size);
+        strncpy(str + message_size, "\r\n", 2);
+        *str = message_size + 2;
+    }
+    buffer_write_adv(&client->server_buff,size);
+    client->command.has_finished = true;
+    return TRANSACTION;
+}
+
+stm_states capa_write(struct selector_key * key, stm_states state) {
+    connection * client = (connection *) key->data;
+    size_t size;
+    char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
+    char * message = "+OK\nUSER\nPIPELINING";
+    size_t message_size = strlen(message);
+    if (message_size > *str - 2) { //-2 por el \n\r
+        return state;
+    }
+    strncpy(str, message, message_size);
+    strncpy(str + message_size, "\r\n", 2);
+    *str = message_size + 2; 
+    buffer_write_adv(&client->server_buff,size);
+    client->command.has_finished = true;
+    return state;
+}
+
+stm_states quit_writ(struct selector_key * key, stm_states state) {
+connection * client = (connection *) key->data;
+    size_t size;
+    char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
+    char * message = "+OK Logging out.";
+    size_t message_size = strlen(message);
+    if (message_size > *str - 2) { //-2 por el \n\r
+        return state;
+    }
+    strncpy(str, message, message_size);
+    strncpy(str + message_size, "\r\n", 2);
+    *str = message_size + 2; 
+    buffer_write_adv(&client->server_buff,size);
+    client->command.has_finished = true;
+    return QUIT;
+}
+
+
+
+
+
+// -------- AUTH COMMANDS  -------------------//
+
+stm_states user(struct selector_key * key)
+{
+    connection * client = (connection *) key->data;
+    char * requested_username = client->command.args;
+
+    // check given user arg ==  registered user
+    for ( int i = 0 ; i < args->user_count ; i++ )
+    {
+        if (strcmp(args->users[i].name, requested_username) == 0)
+        { // valid username
+            // set requested username in client user data
+            client->user_data.requested = true;
+            client->user_data.username_index = i;
+            strcpy(client->user_data.username, args->users[i].name);
+            return AUTHORIZATION;
+        }
+    }
+
+    client->user_data.requested = false;
+    client->user_data.auth = false;
+    client->user_data.username_index = -1;
+    client->user_data.username[0] = 0;
+    return AUTHORIZATION;
+}
+
+stm_states pass(struct selector_key * key)
+{
+    connection * client = (connection *) key->data;
+    char * requested_pass = client->command.args;
+    
+    if ( client->user_data.requested == true )
+    { // user was requested
+        int server_idx = client->user_data.username_index;
+        
+        if (strcmp(args->users[server_idx].pass, requested_pass) == 0)
+        {
+            client->user_data.auth = true;
+            return TRANSACTION;
+        }
+    }
+
+    return AUTHORIZATION;
+
 }

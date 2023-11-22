@@ -7,6 +7,7 @@
 #include "../logger/logger.h"
 #include "../buffer/buffer.h"
 #include "../parser/parser.h"
+#include "../args/args.h"
 
 #define MAX_CLIENTS 512
 #define MAX_BUFF_SIZE 1024
@@ -36,19 +37,21 @@ typedef struct {
 }mail;
 
 typedef struct {
-    int idx;
+    int fd;
     int size;
-    mail * ptr;
 } inbox_state;
 
 typedef struct {
-    bool active;
-
+    bool requested;
     bool auth;
     char username[128];
-    inbox_state * inbox;
+    int username_index; // if requested true then index holds the server idx for the username. O(1) pass check
+
+    // char maildir[128];
+    int inbox_fd;
     int inbox_size;
-    int socket_fd;
+    mail mails[];
+    // int socket_fd;
 } user_state;
 
 
@@ -56,11 +59,15 @@ typedef struct {
 typedef struct command_buff{
     char command[MAX_COMMAND_BUFF];
     char args[MAX_COMMAND_BUFF];
+    bool has_error;
+    bool has_finished;
 }command_buff;
 
 typedef struct connection{
     int socket;
     bool active;
+
+    user_state user_data;
 
     struct state_machine stm;
 
@@ -75,29 +82,7 @@ typedef struct connection{
 
 }connection;
 
-// typedef struct user_data{
-//     struct command_list * command_list;
-//     buffer output_buff;
-//     pop_state session_state;
-//     client_state client_state;
-//     int socket;
-//     login_info login_info;
-//     void *currentCommand; //command currently executing
-//     command_execute_state commandState; //command execution status (tells if you can execute a new command)
-//     mailCache * mailCache;
-// } user_data;
-// struct connection_data {
-//     struct buffer in_buffer_object;
-//     char in_buffer[BUFFER_SIZE];
-//     struct buffer out_buffer_object;
-//     char out_buffer[BUFFER_SIZE];
-//     struct parser * parser;
-//     struct state_machine stm;
 
-//     struct session current_session;
-//     struct command current_command;
-//     stm_states last_state;
-// };
 
 // HANDLERS
 void accept_connection_handler(struct selector_key * key);
@@ -110,39 +95,35 @@ void user_write_handler(struct selector_key * key);
 int store_connection(int socket_fd, connection * clients);
 int get_user_buffer_idx(connection * clients);
 
-int user(user_state * user, char * args);
-int user_write(struct selector_key * key, char * str, size_t * n);
+// COMMANDS
+stm_states user(struct selector_key * key);
+stm_states user_write(struct selector_key * key);
 
-int pass(user_state * user, char * args);
-int pass_write(user_state * user, char * args);
+stm_states pass(struct selector_key * key);
+stm_states pass_write(struct selector_key * key);
 
+stm_states list(struct selector_key * key);
+stm_states list_write(struct selector_key * key);
 
-void list(user_state * user);
-void list_write(user_state * user);
+stm_states retr(struct selector_key * key);
+stm_states retr_write(struct selector_key * key);
 
+stm_states dele(struct selector_key * key);
+stm_states dele_write(struct selector_key * key);
 
-int retr(user_state * user, int mail_id);
-int retr_write(user_state * user, int mail_id);
+stm_states rset(struct selector_key * key);
+stm_states rset_write(struct selector_key * key);
 
+stm_states capa(struct selector_key * key);
+stm_states capa_write(struct selector_key * key, stm_states state);
 
-int dele(user_state * user, int mail_id);
-int dele_write(user_state * user, int mail_id);
+stm_states noop();
+stm_states noop_write();
 
+stm_states quit(struct selector_key * key);
+stm_states quit_writ(struct selector_key * key, stm_states state);
 
-int rset(user_state * user);
-int rset_write(user_state * user);
-
-
-
-int noop();
-int noop_write();
-
-
-int quit(user_state * user);
-int quit_writ(user_state * user);
-
-
-int stat();
-int stat_write();
+stm_states stat();
+stm_states stat_write();
 
 #endif

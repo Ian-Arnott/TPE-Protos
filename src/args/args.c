@@ -27,7 +27,7 @@ port(const char *s) {
 }
 
 static void
-user(const char *s, struct users *user) {
+new_user(const char *s, struct users *user) {
     char *p = strchr(s, ':');
     if(p == NULL) {
         fprintf(stderr, "password not found\n");
@@ -107,7 +107,7 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
                 if ( !parse_user_and_password(argv[i + 1])){
                     error = true;
                 }
-				user(argv[i + 1],&args->users[args->user_count - 1]);
+				new_user(argv[i + 1],&args->users[args->user_count - 1]);
 				i++;
 			} else {
                 // TODO: Logger

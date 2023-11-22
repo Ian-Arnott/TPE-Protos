@@ -37,8 +37,6 @@
 struct users {
     char name[MAX_USER_LENGTH];
     char pass[MAX_USER_LENGTH];
-    
-
     // struct para el estado del inbox al hacer login
 };
 
