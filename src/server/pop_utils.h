@@ -4,11 +4,9 @@
 #include "../parser/parser.h"
 #include "pop3.h"
 
-typedef enum {
-    UNDEFINED,
-    VALID_COMMAND,
-    INVALID_COMMAND
-} parser_event_types;
+#define MAX_COMMAND_LENGTH 4
+
+
 
 
 // command state

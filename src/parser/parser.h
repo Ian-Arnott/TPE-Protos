@@ -14,6 +14,15 @@
 #include <stddef.h>
 
 /**
+Tipos de eventos para los comandos
+UNDEFINED, VALID, PARSE_ERROR*/
+typedef enum {
+    UNDEFINED,
+    VALID,
+    PARSE_ERROR
+} parser_event_types;
+
+/**
  * Evento que retorna el parser.
  * Cada tipo de evento tendrá sus reglas en relación a data.
  */
@@ -36,9 +45,9 @@ struct parser_state_transition {
     /** descriptor del estado destino cuando se cumple la condición */
     unsigned  dest;
     /** acción 1 que se ejecuta cuando la condición es verdadera. requerida. */
-    void    (*act1)(struct parser_event *ret, const uint8_t c);
+    void    (*act1)(struct parser_event *ret, const uint8_t c, void * data); // hay que agregar manejo de data a las acciones del parser
     /** otra acción opcional */
-    void    (*act2)(struct parser_event *ret, const uint8_t c);
+    void    (*act2)(struct parser_event *ret, const uint8_t c, void * data); // con data, podemos acceder la conexion desde las acciones del parser
 };
 
 /** predicado para utilizar en `when' que retorna siempre true */
@@ -80,7 +89,7 @@ parser_reset    (struct parser *p);
  * capturar los datos se debe clonar.
  */
 const struct parser_event *
-parser_feed     (struct parser *p, const uint8_t c);
+parser_feed     (struct parser *p, const uint8_t c, void * data);
 
 /**
  * En caso de la aplicacion no necesite clases caracteres, se

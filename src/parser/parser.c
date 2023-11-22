@@ -47,7 +47,7 @@ parser_reset(struct parser *p) {
 }
 
 const struct parser_event *
-parser_feed(struct parser *p, const uint8_t c) {
+parser_feed(struct parser *p, const uint8_t c, void * data) {
     const unsigned type = p->classes[c];
 
     p->e1.next = p->e2.next = 0;
@@ -69,10 +69,10 @@ parser_feed(struct parser *p, const uint8_t c) {
         }
 
         if(matched) {
-            state[i].act1(&p->e1, c);
+            state[i].act1(&p->e1, c, data);
             if(state[i].act2 != NULL) {
                 p->e1.next = &p->e2;
-                state[i].act2(&p->e2, c);
+                state[i].act2(&p->e2, c, data);
             }
             p->state = state[i].dest;
             break;

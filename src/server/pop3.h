@@ -10,14 +10,8 @@
 
 #define MAX_CLIENTS 512
 #define MAX_BUFF_SIZE 1024
+#define MAX_COMMAND_BUFF 64
 
-
-typedef enum {
-    ANY_CHARACTER,
-    CR,
-    LF,
-    DOT
-} crlf_flag;
 
 typedef enum {
     AUTHORIZATION = 0,
@@ -57,6 +51,13 @@ typedef struct {
     int socket_fd;
 } user_state;
 
+
+
+typedef struct command_buff{
+    char command[MAX_COMMAND_BUFF];
+    char args[MAX_COMMAND_BUFF];
+}command_buff;
+
 typedef struct connection{
     int socket;
     bool active;
@@ -70,28 +71,9 @@ typedef struct connection{
 
     struct parser * parser;
     stm_states last_states;
-
-    // comando current_comando;
+    command_buff command;
 
 }connection;
-
-typedef struct comando
-{
-    // char comando[MAX_COMMAND_LEN + 1];
-    // char argumento[MAX_ARG_LEN + 1];
-    size_t comando_len;
-    size_t arg_len;
-
-    bool ended;
-    bool error;
-    size_t res_index;
-    int mail_fd;
-    int connec_fd;
-    crlf_flag crlf_flag;
-    
-};
-
-
 
 // typedef struct user_data{
 //     struct command_list * command_list;
@@ -128,48 +110,39 @@ void user_write_handler(struct selector_key * key);
 int store_connection(int socket_fd, connection * clients);
 int get_user_buffer_idx(connection * clients);
 
-/**
- * USER command
-*/
 int user(user_state * user, char * args);
+int user_write(struct selector_key * key, char * str, size_t * n);
 
-/**
- * PASS command
-*/
 int pass(user_state * user, char * args);
+int pass_write(user_state * user, char * args);
 
-/**
- * LIST command
-*/
+
 void list(user_state * user);
+void list_write(user_state * user);
 
-/**
- * RETR command
-*/
+
 int retr(user_state * user, int mail_id);
+int retr_write(user_state * user, int mail_id);
 
-/**
- * DELE command
-*/
+
 int dele(user_state * user, int mail_id);
+int dele_write(user_state * user, int mail_id);
 
-/*
- * REST command
-*/
+
 int rset(user_state * user);
+int rset_write(user_state * user);
 
-/*
- * NOOP command
-*/
+
+
 int noop();
+int noop_write();
 
-/*
- * QUIT command
-*/
+
 int quit(user_state * user);
+int quit_writ(user_state * user);
 
-/*
- *  STAT command
-*/
-int stat(); // basically the help command
+
+int stat();
+int stat_write();
+
 #endif

@@ -149,8 +149,6 @@ void accept_connection_handler(struct selector_key *key) {
     buffer_init(&client->server_buffer, MAX_BUFF_SIZE, (uint8_t *) client->server_buff);
     client->parser = parser_init(parser_no_classes(), &parser_deff);
     
-    // buffer_init(&connection->out_buffer_object, BUFFER_SIZE, (uint8_t *) connection->out_buffer);
-    // connection->parser = parser_init(parser_no_classes(), &parser_definition);
     // connection->last_state = -1;
     // connection->current_command.mail_fd = -1;
     // buffer_init(&connection->current_command.mail_buffer_object, BUFFER_SIZE, (uint8_t *) connection->current_command.mail_buffer);
@@ -174,38 +172,6 @@ fail:
 
     }
 }
-
-// void accept_connection_handler(struct selector_key *key){
-//     struct sockaddr_storage client_addr;
-//     socklen_t client_addr_len = sizeof(client_addr);
-
-//     const int client = accept(key->fd, (struct sockaddr *) &client_addr, &client_addr_len);
-
-//     if (client == -1) {
-//         goto fail;
-//     }
-//     // convierte en  non blocking el socket nuevo.
-//     int client_fd  = selector_fd_set_nio(client);
-//     if (client_fd == -1) {
-//         goto fail;
-//     }
-    
-
-//     if (store_connection(client, (connection *) key->data) == 1){
-//         goto fail;
-//     }
-    
-//     write(STDOUT_FILENO, "Stored User\n", 13);
-    
-//     return;
-    
-
-//     fail:
-//     if (client != -1) {
-//         close(client);
-//     }
-
-// }
 
 void user_write_handler(struct selector_key * key){
     write(STDOUT_FILENO, "write handler", 14);

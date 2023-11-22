@@ -4,6 +4,30 @@
 #include <stdlib.h>
 #include "pop3.h"
 
+typedef enum {
+    EMPTY,
+    OPTIONAL,
+    REQUIRED
+} argument_type;
+
+typedef enum auth_commands{
+    USER,
+    PASS,
+    AU_CAPA,
+    AU_QUIT
+}auth_commands;
+
+typedef enum trans_commands{
+    STAT,
+    LIST,
+    RETR,
+    DELE,
+    RSET,
+    NOOP,
+    TR_CAPA,
+    TR_QUIT
+}trans_commands;
+
 
 stm_states read_command(struct selector_key * key, stm_states current_state);
 

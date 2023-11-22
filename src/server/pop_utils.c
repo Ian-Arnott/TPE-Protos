@@ -40,10 +40,10 @@ void parser_argument_return(struct parser_event * ret, uint8_t c, void * data)
 //end state
 void parser_end_enter(struct parser_event * ret, uint8_t c, void * data)
 {
-    ret->type = VALID_COMMAND;
+    ret->type = VALID;
 }
 
 void parser_end_any(struct parser_event * ret, uint8_t c, void * data)
 {
-    ret->type = INVALID_COMMAND;
+    ret->type = PARSE_ERROR;
 }
