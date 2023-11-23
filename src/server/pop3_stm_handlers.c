@@ -113,7 +113,7 @@ int execute_trans_command(trans_commands command, struct selector_key * key)
     switch(command)
     {
         case STAT:
-            stat();
+            //stat();
             break;
         case LIST:
             list(key);

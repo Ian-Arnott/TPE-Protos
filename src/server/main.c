@@ -59,6 +59,7 @@ static int setup_ipv4_tcp_socket(unsigned long port, char * err_msg) {
         err_msg = "unable to listen";
         return -1;
     }
+    err_msg = "No error";
     return server;
 }
 
@@ -110,8 +111,8 @@ main(const int argc, const char **argv) {
 
     int ipv4_server_socket = -1;
     int ipv6_server_socket = -1;
-    int ipv4_client_socket = -1;
-    int ipv6_client_socket = -1;
+    // int ipv4_client_socket = -1;
+    // int ipv6_client_socket = -1;
 
     connection clients[MAX_CLIENTS];
     memset(&clients,0,sizeof(clients));
@@ -127,7 +128,7 @@ main(const int argc, const char **argv) {
     close(STDIN_FILENO);
 
 
-    const char       *err_msg = NULL;
+    char        *err_msg = NULL;
     selector_status   ss      = SELECTOR_SUCCESS;
     fd_selector selector      = NULL;
 
@@ -144,7 +145,7 @@ main(const int argc, const char **argv) {
         err_msg = "getting server socket flags";
         goto finally;
     }    
-    if(selector_fd_set_nio(ipv6_client_socket) == -1) {
+    if(selector_fd_set_nio(ipv6_server_socket) == -1) {
         err_msg = "getting server socket flags";
         goto finally;
     }

@@ -358,101 +358,101 @@ connection * client = (connection *) key->data;
 //--------------WRITE TRAN COMMANDS-----------------//
 
 stm_states list_write(struct selector_key * key){
-    connection * client = (connection *) key->data;
-    size_t size;
-    size_t size2;
-    char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
-    char * msg;
-    char * error_msg = "-ERR No Such Message";
-    size_t error_msg_size = strlen(error_msg);
-    int mail_quant = client->user_data.inbox_size;
-    sprintf(msg, "+OK %d messages:", mail_quant);
-    size_t msg_size = strlen(msg);
-    int last_mail_displayed = 0;
+    // connection * client = (connection *) key->data;
+    // size_t size;
+    // size_t size2;
+    // char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
+    // char * msg;
+    // char * error_msg = "-ERR No Such Message";
+    // size_t error_msg_size = strlen(error_msg);
+    // int mail_quant = client->user_data.inbox_size;
+    // sprintf(msg, "+OK %d messages:", mail_quant);
+    // size_t msg_size = strlen(msg);
+    // int last_mail_displayed = 0;
     
 
-    if (client->command.has_error)
-    {
-        if (error_msg_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, error_msg, error_msg_size);
-        strncpy(str + error_msg_size, "\r\n", 2);
-        *str = error_msg_size + 2;
-    } else
-    {
-        if (msg_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, msg, msg_size);
-        strncpy(str + msg_size, "\r\n", 2);
-        *str = msg_size + 2;
+    // if (client->command.has_error)
+    // {
+    //     if (error_msg_size > *str - 2) { //-2 por el \n\r
+    //         return TRANSACTION;
+    //     }
+    //     strncpy(str, error_msg, error_msg_size);
+    //     strncpy(str + error_msg_size, "\r\n", 2);
+    //     *str = error_msg_size + 2;
+    // } else
+    // {
+    //     if (msg_size > *str - 2) { //-2 por el \n\r
+    //         return TRANSACTION;
+    //     }
+    //     strncpy(str, msg, msg_size);
+    //     strncpy(str + msg_size, "\r\n", 2);
+    //     *str = msg_size + 2;
 
-        char * aux;
-        char * line = "";
-        char * ptr = (char *) buffer_write_ptr(&client->server_buff,&size2);;
+    //     char * aux;
+    //     char * line = "";
+    //     char * ptr = (char *) buffer_write_ptr(&client->server_buff,&size2);;
         
 
-        while (mail_quant > last_mail_displayed + 1)
-        {   
-            sprintf(aux, "%d - %o", last_mail_displayed + 1, client->user_data.mails[last_mail_displayed].size);
-            strcat(aux, "\r\n");
-            strcat(line, aux);
-            last_mail_displayed++;
-        }
-        strncpy(ptr, line, strlen(line));
-        *ptr = strlen(line);
+    //     while (mail_quant > last_mail_displayed + 1)
+    //     {   
+    //         sprintf(aux, "%d - %o", last_mail_displayed + 1, client->user_data.mails[last_mail_displayed].size);
+    //         strcat(aux, "\r\n");
+    //         strcat(line, aux);
+    //         last_mail_displayed++;
+    //     }
+    //     strncpy(ptr, line, strlen(line));
+    //     *ptr = strlen(line);
         
-    }
-    buffer_write_adv(&client->server_buff,size);
-    buffer_write_adv(&client->server_buff,size2);
-    client->command.has_finished = true;
-    return TRANSACTION;
+    // }
+    // buffer_write_adv(&client->server_buff,size);
+    // buffer_write_adv(&client->server_buff,size2);
+    // client->command.has_finished = true;
+    // return TRANSACTION;
 }
 
 stm_states retr_write(struct selector_key * key){ // Revisar !!!!!!!
-    connection * client = (connection *) key->data;
-    size_t size;
-    size_t size2;
-    size_t mail_cont_size;
-    char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
-    char * ptr = (char *) buffer_write_ptr(&client->server_buff,&size2);
-    char * message;
-    int idx_mail; // ver la manera de sacar el mail que se pide!!!!!!!!!
-    sprintf(message, "+OK %o octets", client->user_data.inbox.mails[idx_mail].size);
-    char * error_message = "-ERR Mail not Found";
-    size_t message_size = strlen(message);
-    size_t error_message_size = strlen(error_message);
+    // connection * client = (connection *) key->data;
+    // size_t size;
+    // size_t size2;
+    // size_t mail_cont_size;
+    // char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
+    // char * ptr = (char *) buffer_write_ptr(&client->server_buff,&size2);
+    // char * message;
+    // int idx_mail; // ver la manera de sacar el mail que se pide!!!!!!!!!
+    // sprintf(message, "+OK %o octets", client->user_data.inbox.mails[idx_mail].size);
+    // char * error_message = "-ERR Mail not Found";
+    // size_t message_size = strlen(message);
+    // size_t error_message_size = strlen(error_message);
     
-    if (client->command.has_error)
-    {
-        if (error_message_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, error_message, error_message_size);
-        strncpy(str + error_message_size, "\r\n", 2);
-        *str = error_message_size + 2;
-    } else
-    {
-        if (message_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, message, message_size);
-        strncpy(str + message_size, "\r\n", 2);
-        *str = message_size + 2;
+    // if (client->command.has_error)
+    // {
+    //     if (error_message_size > *str - 2) { //-2 por el \n\r
+    //         return TRANSACTION;
+    //     }
+    //     strncpy(str, error_message, error_message_size);
+    //     strncpy(str + error_message_size, "\r\n", 2);
+    //     *str = error_message_size + 2;
+    // } else
+    // {
+    //     if (message_size > *str - 2) { //-2 por el \n\r
+    //         return TRANSACTION;
+    //     }
+    //     strncpy(str, message, message_size);
+    //     strncpy(str + message_size, "\r\n", 2);
+    //     *str = message_size + 2;
 
-        char * mail_cont;
-        strcpy(mail_cont, client->user_data.inbox.mails[idx_mail].content); //VER DE DONDE SACAR IDX_MAIL!!!!!
-        mail_cont_size = strlen(mail_cont);
-        strncpy(ptr, mail_cont, mail_cont_size);
-        strncpy(ptr + mail_cont_size, "\r\n", 2);
-        *ptr = mail_cont_size + 2; 
+    //     char * mail_cont;
+    //     strcpy(mail_cont, client->user_data.inbox.mails[idx_mail].content); //VER DE DONDE SACAR IDX_MAIL!!!!!
+    //     mail_cont_size = strlen(mail_cont);
+    //     strncpy(ptr, mail_cont, mail_cont_size);
+    //     strncpy(ptr + mail_cont_size, "\r\n", 2);
+    //     *ptr = mail_cont_size + 2; 
 
-    }
-    buffer_write_adv(&client->server_buff,size);
-    buffer_write_adv(&client->server_buff,size2);
-    client->command.has_finished = true;
-    return TRANSACTION;
+    // }
+    // buffer_write_adv(&client->server_buff,size);
+    // buffer_write_adv(&client->server_buff,size2);
+    // client->command.has_finished = true;
+    // return TRANSACTION;
 }
 
 stm_states dele_write(struct selector_key * key){ //Revisar!!!!!!

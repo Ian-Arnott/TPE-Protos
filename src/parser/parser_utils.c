@@ -23,21 +23,21 @@ parser_utils_strcmpi_event(const enum string_cmp_event_types type) {
 }
 
 static void
-may_eq(struct parser_event *ret, const uint8_t c) {
+may_eq(struct parser_event *ret, const uint8_t c, void * data) {
     ret->type    = STRING_CMP_MAYEQ;
     ret->n       = 1;
     ret->data[0] = c;
 }
 
 static void
-eq(struct parser_event *ret, const uint8_t c) {
+eq(struct parser_event *ret, const uint8_t c, void * data) {
     ret->type    = STRING_CMP_EQ;
     ret->n       = 1;
     ret->data[0] = c;
 }
 
 static void
-neq(struct parser_event *ret, const uint8_t c) {
+neq(struct parser_event *ret, const uint8_t c, void * data) {
     ret->type    = STRING_CMP_NEQ;
     ret->n       = 1;
     ret->data[0] = c;
