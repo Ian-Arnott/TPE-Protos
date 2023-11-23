@@ -269,20 +269,20 @@ stm_states user_write(struct selector_key * key) {
     
     if (client->command.has_error)
     {
-        if (error_message_size > *str - 2) { //-2 por el \n\r
+        if (error_message_size > size - 2) { //-2 por el \n\r
             return AUTHORIZATION;
         }
         strncpy(str, error_message, error_message_size);
         strncpy(str + error_message_size, "\r\n", 2);
-        *str = error_message_size + 2;
+        size = error_message_size + 2;
     } else
     {
-        if (message_size > *str - 2) { //-2 por el \n\r
+        if (message_size > size - 2) { //-2 por el \n\r
             return AUTHORIZATION;
         }
         strncpy(str, message, message_size);
         strncpy(str + message_size, "\r\n", 2);
-        *str = message_size + 2;
+        size = message_size + 2;
     }
     buffer_write_adv(&client->server_buff,size);
     client->command.has_finished = true;
@@ -300,20 +300,20 @@ stm_states pass_write(struct selector_key * key) {
     
     if (client->command.has_error)
     {
-        if (error_message_size > *str - 2) { //-2 por el \n\r
+        if (error_message_size > size - 2) { //-2 por el \n\r
             return AUTHORIZATION;
         }
         strncpy(str, error_message, error_message_size);
         strncpy(str + error_message_size, "\r\n", 2);
-        *str = error_message_size + 2;
+        size = error_message_size + 2;
     } else
     {
-        if (message_size > *str - 2) { //-2 por el \n\r
+        if (message_size > size - 2) { //-2 por el \n\r
             return AUTHORIZATION;
         }
         strncpy(str, message, message_size);
         strncpy(str + message_size, "\r\n", 2);
-        *str = message_size + 2;
+        size = message_size + 2;
     }
     buffer_write_adv(&client->server_buff,size);
     client->command.has_finished = true;
@@ -326,31 +326,32 @@ stm_states capa_write(struct selector_key * key, stm_states state) {
     char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
     char * message = "+OK\nUSER\nPIPELINING";
     size_t message_size = strlen(message);
-    if (message_size > *str - 2) { //-2 por el \n\r
+    if (message_size > size - 2) { //-2 por el \n\r
         return state;
     }
     strncpy(str, message, message_size);
     strncpy(str + message_size, "\r\n", 2);
-    *str = message_size + 2; 
+    size = message_size + 2; 
     buffer_write_adv(&client->server_buff,size);
     client->command.has_finished = true;
     return state;
 }
 
 stm_states quit_writ(struct selector_key * key, stm_states state) {
-connection * client = (connection *) key->data;
+    connection * client = (connection *) key->data;
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
     char * message = "+OK Logging out.";
     size_t message_size = strlen(message);
-    if (message_size > *str - 2) { //-2 por el \n\r
+    if (message_size > size - 2) { //-2 por el \n\r
         return state;
     }
     strncpy(str, message, message_size);
     strncpy(str + message_size, "\r\n", 2);
-    *str = message_size + 2; 
+    size = message_size + 2; 
     buffer_write_adv(&client->server_buff,size);
     client->command.has_finished = true;
+    client->active = false;
     return QUIT;
 }
 
@@ -358,231 +359,217 @@ connection * client = (connection *) key->data;
 //--------------WRITE TRAN COMMANDS-----------------//
 
 stm_states list_write(struct selector_key * key){
-    // connection * client = (connection *) key->data;
-    // size_t size;
-    // size_t size2;
-    // char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
-    // char * msg;
-    // char * error_msg = "-ERR No Such Message";
-    // size_t error_msg_size = strlen(error_msg);
-    // int mail_quant = client->user_data.inbox_size;
-    // sprintf(msg, "+OK %d messages:", mail_quant);
-    // size_t msg_size = strlen(msg);
-    // int last_mail_displayed = 0;
-    
-
-    // if (client->command.has_error)
-    // {
-    //     if (error_msg_size > *str - 2) { //-2 por el \n\r
-    //         return TRANSACTION;
-    //     }
-    //     strncpy(str, error_msg, error_msg_size);
-    //     strncpy(str + error_msg_size, "\r\n", 2);
-    //     *str = error_msg_size + 2;
-    // } else
-    // {
-    //     if (msg_size > *str - 2) { //-2 por el \n\r
-    //         return TRANSACTION;
-    //     }
-    //     strncpy(str, msg, msg_size);
-    //     strncpy(str + msg_size, "\r\n", 2);
-    //     *str = msg_size + 2;
-
-    //     char * aux;
-    //     char * line = "";
-    //     char * ptr = (char *) buffer_write_ptr(&client->server_buff,&size2);;
-        
-
-    //     while (mail_quant > last_mail_displayed + 1)
-    //     {   
-    //         sprintf(aux, "%d - %o", last_mail_displayed + 1, client->user_data.mails[last_mail_displayed].size);
-    //         strcat(aux, "\r\n");
-    //         strcat(line, aux);
-    //         last_mail_displayed++;
-    //     }
-    //     strncpy(ptr, line, strlen(line));
-    //     *ptr = strlen(line);
-        
-    // }
-    // buffer_write_adv(&client->server_buff,size);
-    // buffer_write_adv(&client->server_buff,size2);
-    // client->command.has_finished = true;
-    // return TRANSACTION;
-}
-
-stm_states retr_write(struct selector_key * key){ // Revisar !!!!!!!
-    // connection * client = (connection *) key->data;
-    // size_t size;
-    // size_t size2;
-    // size_t mail_cont_size;
-    // char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
-    // char * ptr = (char *) buffer_write_ptr(&client->server_buff,&size2);
-    // char * message;
-    // int idx_mail; // ver la manera de sacar el mail que se pide!!!!!!!!!
-    // sprintf(message, "+OK %o octets", client->user_data.inbox.mails[idx_mail].size);
-    // char * error_message = "-ERR Mail not Found";
-    // size_t message_size = strlen(message);
-    // size_t error_message_size = strlen(error_message);
-    
-    // if (client->command.has_error)
-    // {
-    //     if (error_message_size > *str - 2) { //-2 por el \n\r
-    //         return TRANSACTION;
-    //     }
-    //     strncpy(str, error_message, error_message_size);
-    //     strncpy(str + error_message_size, "\r\n", 2);
-    //     *str = error_message_size + 2;
-    // } else
-    // {
-    //     if (message_size > *str - 2) { //-2 por el \n\r
-    //         return TRANSACTION;
-    //     }
-    //     strncpy(str, message, message_size);
-    //     strncpy(str + message_size, "\r\n", 2);
-    //     *str = message_size + 2;
-
-    //     char * mail_cont;
-    //     strcpy(mail_cont, client->user_data.inbox.mails[idx_mail].content); //VER DE DONDE SACAR IDX_MAIL!!!!!
-    //     mail_cont_size = strlen(mail_cont);
-    //     strncpy(ptr, mail_cont, mail_cont_size);
-    //     strncpy(ptr + mail_cont_size, "\r\n", 2);
-    //     *ptr = mail_cont_size + 2; 
-
-    // }
-    // buffer_write_adv(&client->server_buff,size);
-    // buffer_write_adv(&client->server_buff,size2);
-    // client->command.has_finished = true;
-    // return TRANSACTION;
-}
-
-stm_states dele_write(struct selector_key * key){ //Revisar!!!!!!
     connection * client = (connection *) key->data;
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
-    char * message = "+OK Marked to be Deleted";
-    char * error_message = "-ERR Couldnt delete";
-    size_t message_size = strlen(message);
-    size_t error_message_size = strlen(error_message);
     
-    if (client->command.has_error)
-    {
-        if (error_message_size > *str - 2) { //-2 por el \n\r
+    char * error_message = "-ERR No such message";
+    size_t error_message_length = strlen(error_message);
+
+    if (client->command.args_index > 0) {
+        char * end;
+        unsigned long argument = strtol(client->command.args, &end, 10);
+        if (end[0] != '\0' || argument - 1 >= client->user_data.inbox.dim) {
+            if (error_message_length > size - 2) {
+                return TRANSACTION;
+            }
+            strncpy(str, error_message, error_message_length);
+            strncpy(str + error_message_length, "\r\n", 2);
+            size = error_message_length + 2;
+            buffer_write_adv(&client->server_buff,size);
+            client->command.has_finished = true;
             return TRANSACTION;
         }
-        strncpy(str, error_message, error_message_size);
-        strncpy(str + error_message_size, "\r\n", 2);
-        *str = error_message_size + 2;
-    } else
-    {
-        if (message_size > *str - 2) { //-2 por el \n\r
+
+        char message[MAX_BUFF_SIZE];
+        size_t message_length = sprintf(message, "+OK %zu %zu", argument, client->user_data.inbox.mails[argument - 1].size);
+
+        if (message_length > size - 2) {
             return TRANSACTION;
         }
-        strncpy(str, message, message_size);
-        strncpy(str + message_size, "\r\n", 2);
-        *str = message_size + 2;
+        strncpy(str, error_message, error_message_length);
+        strncpy(str + error_message_length, "\r\n", 2);
+        size = error_message_length + 2;
+        buffer_write_adv(&client->server_buff,size);
+        client->command.has_finished = true;
+        return TRANSACTION;
     }
+    char message[MAX_BUFF_SIZE] = {0};
+    size_t message_length = 0;
+    if (!client->command.ok) {
+        char * ok = "+OK\r\n";
+        size_t ok_length = strlen(ok);
+        if (ok_length > size) {
+            return TRANSACTION;
+        }
+        strncpy(message, ok, ok_length);
+        size -= ok_length;
+        message_length += ok_length;
+        client->command.ok = true;
+    }
+    while (client->user_data.inbox.idx < client->user_data.inbox.dim) {
+        if (!client->user_data.inbox.mails[client->user_data.inbox.idx].to_delete) {
+            char line[MAX_BUFF_SIZE];
+            size_t line_length = sprintf(line, "%zu %zu\r\n", client->user_data.inbox.idx + 1, client->user_data.inbox.mails[client->user_data.inbox.idx].size);
+            if (line_length > size) {
+                break;
+            }
+            strncpy(message + message_length, line, line_length);
+            size -= line_length;
+            message_length += line_length;
+        }
+        client->user_data.inbox.idx++;
+    }
+    if (client->user_data.inbox.idx == client->user_data.inbox.dim) {
+        char * end = ".\r\n";
+        size_t end_length = strlen(end);
+        if (end_length <= size) {
+            strncpy(message + message_length, end, end_length);
+            size -= end_length;
+            message_length += end_length;
+            client->command.has_finished = true;
+        }
+    }
+
+    strncpy(str, message, message_length);
+    size = message_length;
     buffer_write_adv(&client->server_buff,size);
+    return TRANSACTION;
+}
+
+stm_states retr_write(struct selector_key *key) {
+    connection *client = (connection *)key->data;
+    size_t size;
+    char *str = (char *)buffer_write_ptr(&client->server_buff, &size);
+
+    if (client->command.has_error) {
+        char *error_message = "-ERR No such message\r\n";
+        size_t error_message_length = strlen(error_message);
+        if (error_message_length > size - 2) return TRANSACTION;
+        strncpy(str, error_message, size = error_message_length + 2);
+        client->command.has_finished = true;
+        buffer_write_adv(&client->server_buff, size);
+        return TRANSACTION;
+    }
+
+    if (!client->command.ok) {
+        char *ok = "+OK message follows\r\n";
+        size_t ok_length = strlen(ok);
+        if (ok_length > size) return TRANSACTION;
+        strncpy(str, ok, size = ok_length);
+        client->command.ok = true;
+        buffer_write_adv(&client->server_buff, size);
+        selector_set_interest_key(key, OP_NOOP);
+        selector_set_interest(key->s, client->user_data.inbox.rtrv_fd, OP_READ);
+        return TRANSACTION;
+    }
+
+    while (buffer_can_write(&client->server_buff) && buffer_can_read(&client->command.retr_mail_buffer)) {
+        char c = (client->command.crlf == '.') ? '.' : (char)buffer_read(&client->command.retr_mail_buffer);
+        if (c == '\r') client->command.crlf = '\r';
+        else if (c == '\n' && client->command.crlf == '\r') client->command.crlf = '\n';
+        else if (c == '.' && client->command.crlf == '\n') {
+            buffer_write(&client->server_buff, '.');
+            if (!buffer_can_write(&client->server_buff)) {
+                client->command.crlf = '.';
+                return TRANSACTION;
+            }
+        } else client->command.crlf = 0;
+        buffer_write(&client->server_buff, c);
+    }
+
+    if (!buffer_can_read(&client->command.retr_mail_buffer)) {
+        if (client->user_data.inbox.rtrv_fd == -1) {
+            char end[6], *ptr = (char *)buffer_write_ptr(&client->server_buff, &size);
+            size_t end_length = (client->command.crlf != '\n') ? strcpy(end, "\r\n") + 2 : 0;
+            strcpy(end + end_length, ".\r\n");
+            end_length += 3;
+            if (end_length > size) return TRANSACTION;
+            strncpy(ptr, end, size = end_length);
+            buffer_write_adv(&client->server_buff, size);
+            client->command.has_finished = true;
+            client->command.crlf = 0;
+            return TRANSACTION;
+        }
+    } else selector_set_interest_key(key, OP_NOOP);
+
+    selector_set_interest(key->s, client->user_data.inbox.rtrv_fd, OP_READ);
+    return TRANSACTION;
+}
+
+
+stm_states dele_write(struct selector_key *key) {
+    connection *client = (connection *)key->data;
+    size_t size;
+    char *str = (char *)buffer_write_ptr(&client->server_buff, &size);
+    char *error_message = "-ERR No such message\r\n";
+    size_t error_message_length = strlen(error_message);
+
+    char *end;
+    unsigned long argument = strtol(client->command.args, &end, 10);
+    if (end[0] != '\0' || argument - 1 >= client->user_data.inbox.dim || client->user_data.inbox.mails[argument - 1].to_delete) {
+        if (error_message_length > size - 2) return TRANSACTION;
+        strncpy(str, error_message, size = error_message_length + 2);
+        buffer_write_adv(&client->server_buff, size);
+        client->command.has_finished = true;
+        return TRANSACTION;
+    }
+
+    client->user_data.inbox.mails[argument - 1].to_delete = true;
+
+    char *message = "+OK Message deleted\r\n";
+    size_t message_length = strlen(message);
+    if (message_length > size - 2) return TRANSACTION;
+    strncpy(str, message, size = message_length + 2);
+    client->user_data.inbox.byte_size -= client->user_data.inbox.mails[argument - 1].size;
+    client->command.has_finished = true;
+    buffer_write_adv(&client->server_buff, size);
+    return TRANSACTION;
+}
+
+
+stm_states noop_write(struct selector_key *key) {
+    connection *client = (connection *)key->data;
+    size_t size;
+    char *str = (char *)buffer_write_ptr(&client->server_buff, &size);
+    char *message = "+OK\r\n";
+    size_t message_size = strlen(message);
+
+    if (message_size > size - 2) return TRANSACTION;
+    size = message_size + 2;
+    strncpy(str, message, size);
+    buffer_write_adv(&client->server_buff, size);
     client->command.has_finished = true;
     return TRANSACTION;
 }
 
-stm_states noop_write(struct selector_key * key){ //Revisar!!!!!!
-    connection * client = (connection *) key->data;
-    size_t size;
-    char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
-    char * message = "+OK";
-    char * error_message = "-ERR Failed to NOOP";
-    size_t message_size = strlen(message);
-    size_t error_message_size = strlen(error_message);
-    
-    if (client->command.has_error)
-    {
-        if (error_message_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, error_message, error_message_size);
-        strncpy(str + error_message_size, "\r\n", 2);
-        *str = error_message_size + 2;
-    } else
-    {
-        if (message_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, message, message_size);
-        strncpy(str + message_size, "\r\n", 2);
-        *str = message_size + 2;
-    }
-    buffer_write_adv(&client->server_buff,size);
-    client->command.has_finished = true;
-    return TRANSACTION;
-}
 
-stm_states rset_write(struct selector_key * key){ //Revisar!!!!!!
-    connection * client = (connection *) key->data;
+stm_states rset_write(struct selector_key * key){
+    connection *client = (connection *)key->data;
     size_t size;
-    char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
-    char * message = "+OK";
-    char * error_message = "-ERR Couldnt reset";
+    char *str = (char *)buffer_write_ptr(&client->server_buff, &size);
+    char *message = "+OK\r\n";
     size_t message_size = strlen(message);
-    size_t error_message_size = strlen(error_message);
-    
-    if (client->command.has_error)
-    {
-        if (error_message_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, error_message, error_message_size);
-        strncpy(str + error_message_size, "\r\n", 2);
-        *str = error_message_size + 2;
-    } else
-    {
-        if (message_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, message, message_size);
-        strncpy(str + message_size, "\r\n", 2);
-        *str = message_size + 2;
-    }
-    buffer_write_adv(&client->server_buff,size);
+
+    if (message_size > size - 2) return TRANSACTION;
+    size = message_size + 2;
+    strncpy(str, message, size);
+    buffer_write_adv(&client->server_buff, size);
     client->command.has_finished = true;
     return TRANSACTION;
 }
 
 stm_states stat_write(struct selector_key * key){ //Revisar!!!!!!
-    connection * client = (connection *) key->data;
+    connection *client = (connection *)key->data;
     size_t size;
-    char * str = (char *) buffer_write_ptr(&client->server_buff,&size);
-    char * message;
-    int mailnum = client->user_data.inbox.dim;
-    int totalmailsize = 0;
-    for (size_t i = 0; i < mailnum; i++)
-    {
-        totalmailsize += client->user_data.inbox.mails[i].size;
-    }
-    sprintf(message, "+OK %d %o", mailnum, totalmailsize);
-    
-    char * error_message = "-ERR Failed to NOOP";
+    char *str = (char *)buffer_write_ptr(&client->server_buff, &size);
+    char *message = "+OK\r\nUSER\r\nPIPELINING\r\n.";
     size_t message_size = strlen(message);
-    size_t error_message_size = strlen(error_message);
-    
-    if (client->command.has_error)
-    {
-        if (error_message_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, error_message, error_message_size);
-        strncpy(str + error_message_size, "\r\n", 2);
-        *str = error_message_size + 2;
-    } else
-    {
-        if (message_size > *str - 2) { //-2 por el \n\r
-            return TRANSACTION;
-        }
-        strncpy(str, message, message_size);
-        strncpy(str + message_size, "\r\n", 2);
-        *str = message_size + 2;
-    }
-    buffer_write_adv(&client->server_buff,size);
+
+    if (message_size > size - 2) return TRANSACTION;
+    size = message_size + 2;
+    strncpy(str, message, size);
+    buffer_write_adv(&client->server_buff, size);
     client->command.has_finished = true;
     return TRANSACTION;
 }

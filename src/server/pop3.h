@@ -44,6 +44,7 @@ typedef struct {
     size_t dim;
     mail * mails;
     int rtrv_fd; // fd of mail to retrieve
+    size_t idx;
 } inbox_state;
 
 typedef struct {
@@ -66,6 +67,8 @@ typedef struct command_buff{
     int args_index;
     bool has_error;
     bool has_finished;
+    bool ok;
+    char crlf;
 }command_buff;
 
 typedef struct connection{
