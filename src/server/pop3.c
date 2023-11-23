@@ -559,16 +559,30 @@ stm_states rset_write(struct selector_key * key){
     return TRANSACTION;
 }
 
-stm_states stat_write(struct selector_key * key){ //Revisar!!!!!!
+stm_states stat_write(struct selector_key * key){
     connection *client = (connection *)key->data;
     size_t size;
     char *str = (char *)buffer_write_ptr(&client->server_buff, &size);
-    char *message = "+OK\r\nUSER\r\nPIPELINING\r\n.";
-    size_t message_size = strlen(message);
+
+    char message[MAX_BUFF_SIZE];
+
+    size_t mail_count = 0;
+    for (size_t i = 0; i < client->user_data.inbox.dim; i++) {
+        if (client->user_data.inbox.mails[i].to_delete) {
+            mail_count++;
+        }
+    }
+
+    size_t message_size = sprintf(message, "+OK %zu %zu", mail_count, client->user_data.inbox.byte_size);
+
+    if (message_size > size - 2) {
+        return TRANSACTION;
+    }
 
     if (message_size > size - 2) return TRANSACTION;
+    strncpy(str, message, message_size);
+    strncpy(str + message_size, "\r\n", 2);
     size = message_size + 2;
-    strncpy(str, message, size);
     buffer_write_adv(&client->server_buff, size);
     client->command.has_finished = true;
     return TRANSACTION;
