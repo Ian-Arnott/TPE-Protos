@@ -30,8 +30,74 @@
 
 static bool done = false;
 
+struct popargs args = {0};
 
+static int setup_ipv4_tcp_socket(unsigned long port, char * err_msg) {
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port        = htons(args.pop_port);
 
+    const int server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if(server < 0) {
+        err_msg = "unable to create socket";
+        return -1;        
+    }
+    // TODO: logger
+    fprintf(stdout, "Listening IPv4 on TCP port %d\n", args.pop_port);
+
+    // man 7 ip. no importa reportar nada si falla.
+    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+
+    if(bind(server, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
+        err_msg = "unable to bind socket";
+        return -1;
+    }
+
+    if (listen(server, 20) < 0) {
+        err_msg = "unable to listen";
+        return -1;
+    }
+    return server;
+}
+
+static int setup_ipv6_tcp_socket(unsigned long port, char * err_msg) {
+    // Storage for socket address
+    struct sockaddr_in6 address;
+    socklen_t address_length = sizeof(address);
+
+    memset(&address, 0, address_length);
+    address.sin6_family = AF_INET6;
+    address.sin6_addr = in6addr_any;
+    address.sin6_port = htons(port);
+
+    int server = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+
+    if (server < 0) {
+        err_msg = "unable to create socket";
+        return -1; 
+    }
+
+    // TODO: logger
+    fprintf(stdout, "Listening IPv4 on TCP port %d\n", args.pop_port);
+
+    setsockopt(server, IPPROTO_IPV6, IPV6_V6ONLY, &(int){ 1 }, sizeof(int));
+    // man 7 ip
+    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
+
+    if (bind(server, (struct sockaddr *) &address, address_length) < 0) {
+        err_msg = "unable to bind socket";
+        return -1;
+    }
+
+    if (listen(server, 20) < 0) {
+        err_msg = "unable to listen";
+        return -1;
+    }
+
+    return server;
+}
 
 static void
 sigterm_handler(const int signal) {
@@ -42,15 +108,13 @@ sigterm_handler(const int signal) {
 int
 main(const int argc, const char **argv) {
 
+    int ipv4_server_socket = -1;
+    int ipv6_server_socket = -1;
+    int ipv4_client_socket = -1;
+    int ipv6_client_socket = -1;
+
     connection clients[MAX_CLIENTS];
     memset(&clients,0,sizeof(clients));
-    
-
-    // unsigned port = 8082;
-
-    // pop3 server data
-    struct popargs args;
-
 
     parse_args(argc, argv, &args);
 
@@ -59,7 +123,6 @@ main(const int argc, const char **argv) {
     {
         printf("User %d : %s : %s\n", i, args.users[i].name, args.users[i].pass);
     }
-    
 
     close(STDIN_FILENO);
 
@@ -68,49 +131,25 @@ main(const int argc, const char **argv) {
     selector_status   ss      = SELECTOR_SUCCESS;
     fd_selector selector      = NULL;
 
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    addr.sin_port        = htons(args.pop_port);
-
-    const int server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if(server < 0) {
-        err_msg = "unable to create socket";
-        goto finally;
-    }
-    // TODO: logger
-    fprintf(stdout, "Listening on TCP port %d\n", args.pop_port);
-
-    // man 7 ip. no importa reportar nada si falla.
-    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
-
-    if(bind(server, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
-        err_msg = "unable to bind socket";
-        goto finally;
-    }
-
-    if (listen(server, 20) < 0) {
-        err_msg = "unable to listen";
-        goto finally;
-    }
-
+    ipv4_server_socket = setup_ipv4_tcp_socket(args.pop_port, err_msg);
+    ipv6_server_socket = setup_ipv6_tcp_socket(args.pop_port, err_msg);
+    
+    
     // registrar sigterm es útil para terminar el programa normalmente.
     // esto ayuda mucho en herramientas como valgrind.
     signal(SIGTERM, sigterm_handler);
     signal(SIGINT,  sigterm_handler);
 
-    // user_data usersData[MAX_CONNECTIONS];
-    // memset(usersData,0,sizeof(usersData));
-    // for (int i = 0; i < MAX_CONNECTIONS; i++){
-    //     usersData[i].socket = NOT_ALLOCATED;
-    //     usersData[i].commandState = AVAILABLE;
-    // }
-
-    if(selector_fd_set_nio(server) == -1) {
+    if(selector_fd_set_nio(ipv4_server_socket) == -1) {
+        err_msg = "getting server socket flags";
+        goto finally;
+    }    
+    if(selector_fd_set_nio(ipv6_client_socket) == -1) {
         err_msg = "getting server socket flags";
         goto finally;
     }
+
+    // SELECTOR
     const struct selector_init conf = {
         .signal = SIGALRM,
         .select_timeout = {
@@ -134,9 +173,15 @@ main(const int argc, const char **argv) {
         .handle_close      = NULL, // nada que liberar
     };
 
-    ss = selector_register(selector, server, &pop3_handler,OP_READ, (void *) &args);
+    ss = selector_register(selector, ipv4_server_socket, &pop3_handler,OP_READ, (void *) &args);
     if(ss != SELECTOR_SUCCESS) {
-        err_msg = "registering fd";
+        err_msg = "registering fd for IPv4";
+        goto finally;
+    }
+
+    ss = selector_register(selector, ipv6_server_socket, &pop3_handler,OP_READ, (void *) &args);
+    if(ss != SELECTOR_SUCCESS) {
+        err_msg = "registering fd for IPv6";
         goto finally;
     }
 
@@ -171,8 +216,11 @@ main(const int argc, const char **argv) {
     }
     selector_close();
 
-    if(server >= 0) {
-        close(server);
+    if(ipv4_server_socket >= 0) {
+        close(ipv4_server_socket);
+    }
+    if(ipv6_server_socket >= 0) {
+        close(ipv6_server_socket);
     }
     return ret;
 }

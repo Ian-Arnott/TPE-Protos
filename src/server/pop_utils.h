@@ -5,7 +5,7 @@
 #include "pop3.h"
 
 #define MAX_COMMAND_LENGTH 4
-
+#define MAX_ARGS_LENGTH 128
 
 
 

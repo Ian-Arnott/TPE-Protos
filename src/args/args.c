@@ -80,9 +80,13 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
 
     args->pop_addr = "127.0.0.1";
     args->pop_port = 1110;
-// ACA VAMOS A CAMBIAR EL PUERTO 110
+
     args->mng_addr   = "127.0.0.1";
-    args->mng_port   = 8080;
+    args->mng_port   = 6000;
+
+    // MAX MAILS per client
+
+    args->max_mails = DEFAULT_MAX_MAILS;
 
     if ( argc <= 2){
         log(LOG_ERROR,"%s", "ERROR Invalid arguments, usage <PORT> -u user1:password1 -u user2:password2 ...");

@@ -2,6 +2,7 @@
 #define POP3_STM_HANDLERS_H_
 
 #include <stdlib.h>
+#include <dirent.h>
 #include "pop3.h"
 
 typedef enum {

@@ -1,4 +1,9 @@
 #include "pop3_stm_handlers.h"
+#include <sys/stat.h>
+
+
+// ---- SERVER ARGS ----- //
+extern struct popargs args;
 
 
 // ES MUY IMPORTANTE QUE LOS COMANDOS ESTEN EN EL MISMO ORDEN QUE EL ENUM 
@@ -143,7 +148,6 @@ stm_states write_command(struct selector_key * key, stm_states current_state) {
 
     if (buffer_can_write(&client->server_buff))
     {
-
         if (current_state == AUTHORIZATION)
         {
             for (size_t i = 0; i < auth_commands_dim; i++)
@@ -152,7 +156,12 @@ stm_states write_command(struct selector_key * key, stm_states current_state) {
                 if (strcasecmp(current, client->command.command) == 0)
                 {
                     stm_states next = auth_writer(key,i);
-                    // TODO: que hacer al terminar de ejecutar un comando
+                    if (client->command.has_finished) {
+                        client->command.args[0] = 0;
+                        client->command.args_index = 0;
+                        client->command.command[0] = 0;
+                        client->command.command_index = 0;
+                    }
                     return next;
                 }
             }
@@ -165,7 +174,12 @@ stm_states write_command(struct selector_key * key, stm_states current_state) {
                 if (strcasecmp(current, client->command.command) == 0)
                 {
                     stm_states next = trans_writer(key,i);
-                    // TODO: que hacer al terminar de ejecutar un comando
+                    if (client->command.has_finished) {
+                        client->command.args[0] = 0;
+                        client->command.args_index = 0;
+                        client->command.command[0] = 0;
+                        client->command.command_index = 0;
+                    }
                     return next;
                 }
             }
@@ -201,7 +215,7 @@ stm_states trans_writer(struct selector_key * key, trans_commands command){
     switch(command)
     {
         case STAT:
-            stat_write();
+            stat_write(key);
             break;
         case LIST:
             list_write(key);
@@ -216,7 +230,7 @@ stm_states trans_writer(struct selector_key * key, trans_commands command){
             rset_write(key);
             break;
         case NOOP:
-            noop_write();
+            noop_write(key);
             break;
         case TR_CAPA:
             capa_write(key, TRANSACTION);
@@ -263,7 +277,38 @@ stm_states authorization_write(struct selector_key * key){
 }
 
 void transaction_arrival(stm_states state, struct selector_key * key){
-    log(INFO, "%s", "transaction_arrival");
+
+    connection * client = (connection *) key->data;
+
+    // must reconnect to update mails
+    if (client->user_data.inbox.dim != 0) return;
+
+    DIR * dir = opendir(client->user_data.inbox.mail_dir);
+    struct dirent * file;
+
+    while (client->user_data.inbox.dim < args.max_mails && (file = readdir(dir)) != NULL)
+    {
+        if (strcmp(".", file->d_name) == 0 || strcmp("..", file->d_name) == 0) continue;
+        
+        size_t i = client->user_data.inbox.dim;
+
+        strcat(client->user_data.inbox.mails[i].path, client->user_data.inbox.mail_dir);
+        strcat(client->user_data.inbox.mails[i].path, "/");
+        strcat(client->user_data.inbox.mails[i].path, file->d_name);
+
+        struct stat stat_data;
+        if (stat(client->user_data.inbox.mails[i].path, &stat_data) == 0) {
+            client->user_data.inbox.mails[i].size = stat_data.st_size;
+            client->user_data.inbox.byte_size += stat_data.st_size;
+            client->user_data.inbox.dim++;
+        } else {
+            client->user_data.inbox.mails[i].path[0] = '\0';
+        }
+    }
+
+    closedir(dir);
+
+    log(DEBUG, "%s", "transaction_arrival success");
 }
 void transaction_departure(stm_states state, struct selector_key * key){
     log(INFO, "%s", "transaction_departure");
@@ -285,6 +330,7 @@ void error_arrival(stm_states state, struct selector_key * key){
     log(INFO, "%s", "error_arrival");
     connection * client = (connection *) key->data;
     client->command.command[0] = '\0';
+    client->command.command_index = 0;
     client->command.args[0] = '\0';
     parser_reset(client->parser);
     selector_set_interest_key(key, OP_WRITE);

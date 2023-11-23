@@ -12,6 +12,8 @@
 #define MAX_CLIENTS 512
 #define MAX_BUFF_SIZE 1024
 #define MAX_COMMAND_BUFF 64
+#define MAX_PATH 4096
+#define MAX_USERNAME 128
 
 
 typedef enum {
@@ -31,34 +33,37 @@ typedef enum {
 
 // USER
 typedef struct {
-    char content[2048]; //TODO: buscar tamano de los mails
+    char path[MAX_PATH]; //TODO: buscar tamano de los mails
     int size;
     bool to_delete;
 }mail;
 
 typedef struct {
-    int fd;
-    int size;
+    char mail_dir[MAX_PATH];
+    size_t byte_size;
+    size_t dim;
+    mail * mails;
+    int rtrv_fd; // fd of mail to retrieve
 } inbox_state;
 
 typedef struct {
     bool requested;
     bool auth;
-    char username[128];
+    char username[MAX_USERNAME];
     int username_index; // if requested true then index holds the server idx for the username. O(1) pass check
 
-    // char maildir[128];
-    int inbox_fd;
-    int inbox_size;
-    mail mails[];
-    // int socket_fd;
+    inbox_state inbox;
 } user_state;
 
 
 
 typedef struct command_buff{
+    struct buffer retr_mail_buffer;
+    char mail_buffer[MAX_BUFF_SIZE];
     char command[MAX_COMMAND_BUFF];
+    int command_index;
     char args[MAX_COMMAND_BUFF];
+    int args_index;
     bool has_error;
     bool has_finished;
 }command_buff;
@@ -66,20 +71,15 @@ typedef struct command_buff{
 typedef struct connection{
     int socket;
     bool active;
-
     user_state user_data;
-
     struct state_machine stm;
-
     struct buffer command_buffer;
     char command_buff[MAX_BUFF_SIZE];
     struct buffer server_buffer;
     char server_buff[MAX_BUFF_SIZE];
-
     struct parser * parser;
     stm_states last_states;
     command_buff command;
-
 }connection;
 
 
@@ -118,12 +118,12 @@ stm_states capa(struct selector_key * key);
 stm_states capa_write(struct selector_key * key, stm_states state);
 
 stm_states noop();
-stm_states noop_write();
+stm_states noop_write(struct selector_key * key);
 
 stm_states quit(struct selector_key * key);
 stm_states quit_writ(struct selector_key * key, stm_states state);
 
-stm_states stat();
-stm_states stat_write();
+stm_states pop_stat();
+stm_states stat_write(struct selector_key * key);
 
 #endif
