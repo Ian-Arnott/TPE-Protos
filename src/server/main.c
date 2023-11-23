@@ -32,7 +32,7 @@ static bool done = false;
 
 struct popargs args = {0};
 
-static int setup_ipv4_tcp_socket(unsigned long port, char * err_msg) {
+static int setup_ipv4_tcp_socket(unsigned long port) {
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family      = AF_INET;
@@ -41,7 +41,6 @@ static int setup_ipv4_tcp_socket(unsigned long port, char * err_msg) {
 
     const int server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(server < 0) {
-        err_msg = "unable to create socket";
         return -1;        
     }
     // TODO: logger
@@ -51,19 +50,16 @@ static int setup_ipv4_tcp_socket(unsigned long port, char * err_msg) {
     setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
 
     if(bind(server, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
-        err_msg = "unable to bind socket";
         return -1;
     }
 
     if (listen(server, 20) < 0) {
-        err_msg = "unable to listen";
         return -1;
     }
-    err_msg = "No error";
     return server;
 }
 
-static int setup_ipv6_tcp_socket(unsigned long port, char * err_msg) {
+static int setup_ipv6_tcp_socket(unsigned long port) {
     // Storage for socket address
     struct sockaddr_in6 address;
     socklen_t address_length = sizeof(address);
@@ -76,7 +72,6 @@ static int setup_ipv6_tcp_socket(unsigned long port, char * err_msg) {
     int server = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 
     if (server < 0) {
-        err_msg = "unable to create socket";
         return -1; 
     }
 
@@ -88,12 +83,10 @@ static int setup_ipv6_tcp_socket(unsigned long port, char * err_msg) {
     setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
     if (bind(server, (struct sockaddr *) &address, address_length) < 0) {
-        err_msg = "unable to bind socket";
         return -1;
     }
 
     if (listen(server, 20) < 0) {
-        err_msg = "unable to listen";
         return -1;
     }
 
@@ -132,8 +125,18 @@ main(const int argc, const char **argv) {
     selector_status   ss      = SELECTOR_SUCCESS;
     fd_selector selector      = NULL;
 
-    ipv4_server_socket = setup_ipv4_tcp_socket(args.pop_port, err_msg);
-    ipv6_server_socket = setup_ipv6_tcp_socket(args.pop_port, err_msg);
+    ipv4_server_socket = setup_ipv4_tcp_socket(args.pop_port);
+    if (ipv4_server_socket < 0)
+    {
+        err_msg = "Error setting up IPv4 socket";
+        goto finally;
+    }    
+    ipv6_server_socket = setup_ipv6_tcp_socket(args.pop_port);
+    if (ipv6_server_socket < 0)
+    {
+        err_msg = "Error setting up IPv6 socket";
+        goto finally;
+    }
     
     
     // registrar sigterm es útil para terminar el programa normalmente.
