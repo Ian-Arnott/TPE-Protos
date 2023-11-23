@@ -210,12 +210,6 @@ fail:
     }
 }
 
-void user_write_handler(struct selector_key * key){
-    write(STDOUT_FILENO, "write handler", 14);
-    printf("Esto es el fd de la key: %d \t Esto es su selector \n", key->fd);
-    // sendto(key->fd, to_print, bytes_to_send, 0, (struct sockaddr *) &client_addr, client_addr_len);
-}
-
 stm_states list(struct selector_key * key) {
     // if (!user->auth)
     // {

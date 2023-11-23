@@ -92,7 +92,6 @@ void accept_connection_handler(struct selector_key * key);
 void client_close(struct selector_key *key);
 void client_write(struct selector_key *key);
 void client_read(struct selector_key *key);
-void user_write_handler(struct selector_key * key);
 
 // UTILS
 int store_connection(int socket_fd, connection * clients);
