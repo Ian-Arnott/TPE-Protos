@@ -26,6 +26,7 @@
 #include <stdbool.h>
 // #include "../selector/selector.h"
 #include "../args/args.h"
+#include "../clients/client.h"
 #include "pop3.h"
 
 static bool done = false;
@@ -104,8 +105,8 @@ main(const int argc, const char **argv) {
 
     int ipv4_server_socket = -1;
     int ipv6_server_socket = -1;
-    // int ipv4_client_socket = -1;
-    // int ipv6_client_socket = -1;
+    int ipv4_client_socket = -1;
+    int ipv6_client_socket = -1;
 
     connection clients[MAX_CLIENTS];
     memset(&clients,0,sizeof(clients));
@@ -128,13 +129,23 @@ main(const int argc, const char **argv) {
     ipv4_server_socket = setup_ipv4_tcp_socket(args.pop_port);
     if (ipv4_server_socket < 0)
     {
-        err_msg = "Error setting up IPv4 socket";
+        err_msg = "Error setting up IPv4 TCP socket";
         goto finally;
     }    
     ipv6_server_socket = setup_ipv6_tcp_socket(args.pop_port);
     if (ipv6_server_socket < 0)
     {
-        err_msg = "Error setting up IPv6 socket";
+        err_msg = "Error setting up IPv6 TCP socket";
+        goto finally;
+    }
+    ipv4_client_socket = setup_ipv4_udp_socket(args.mng_port);
+    if (ipv4_client_socket < 0) {
+        err_msg = "Error setting up IPv4 UDP socket";
+        goto finally;
+    }
+    ipv6_client_socket = setup_ipv6_udp_socket(args.mng_addr);
+    if (ipv6_client_socket < 0) {
+        err_msg = "Error setting up IPv6 UDP socket";
         goto finally;
     }
     
@@ -149,6 +160,14 @@ main(const int argc, const char **argv) {
         goto finally;
     }    
     if(selector_fd_set_nio(ipv6_server_socket) == -1) {
+        err_msg = "getting server socket flags";
+        goto finally;
+    }
+    if(selector_fd_set_nio(ipv4_client_socket) == -1) {
+        err_msg = "getting server socket flags";
+        goto finally;
+    }
+    if(selector_fd_set_nio(ipv6_client_socket) == -1) {
         err_msg = "getting server socket flags";
         goto finally;
     }
@@ -177,13 +196,30 @@ main(const int argc, const char **argv) {
         .handle_close      = NULL, // nada que liberar
     };
 
+    const struct fd_handler client_handler = {
+        .handle_read       = accept_client_handler, // antes habia otra cosa
+        .handle_write      = NULL,
+        .handle_close      = NULL, // nada que liberar
+    };
+
+    
+
     ss = selector_register(selector, ipv4_server_socket, &pop3_handler,OP_READ, (void *) &args);
     if(ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd for IPv4";
         goto finally;
     }
-
     ss = selector_register(selector, ipv6_server_socket, &pop3_handler,OP_READ, (void *) &args);
+    if(ss != SELECTOR_SUCCESS) {
+        err_msg = "registering fd for IPv6";
+        goto finally;
+    }
+    ss = selector_register(selector, ipv4_client_socket, &client_handler,OP_READ, (void *) &args);
+    if(ss != SELECTOR_SUCCESS) {
+        err_msg = "registering fd for IPv4";
+        goto finally;
+    }
+    ss = selector_register(selector, ipv6_client_socket, &client_handler,OP_READ, (void *) &args);
     if(ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd for IPv6";
         goto finally;
