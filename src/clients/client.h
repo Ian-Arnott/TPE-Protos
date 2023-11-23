@@ -15,6 +15,16 @@ typedef enum {
     CLIENT_PARSER_STATES_COUNT
 } client_parser_states;
 
+typedef enum client_commands{
+    U,
+    C,
+    R,
+    D,
+    M,
+    S,
+    L
+}client_commands;
+
 
 void accept_client_handler(struct selector_key * key);
 
