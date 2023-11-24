@@ -26,7 +26,7 @@ number_of_clients=$1
 
 # Run the desired number of client instances simultaneously
 for ((i=1; i<=$number_of_clients; i++)); do
-  python3 client.py &
+  python3 test/client_test.py &
   child_pids+=("$!")
 done
 

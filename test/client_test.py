@@ -4,7 +4,7 @@ import time
 
 # Server details
 server = 'localhost' # localhost if we are running the server locally or pampero.itba.edu.ar if we are running it in pampero
-port = 8082 # POP server passive port
+port = 1110 # POP server passive port
 username = 'facha' # user we want to connect with
 password = 'pass'
 

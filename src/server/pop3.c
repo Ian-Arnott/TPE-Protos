@@ -581,7 +581,7 @@ stm_states stat_write(struct selector_key * key){
 
     size_t mail_count = 0;
     for (size_t i = 0; i < client->user_data.inbox.dim; i++) {
-        if (client->user_data.inbox.mails[i].to_delete) {
+        if (!client->user_data.inbox.mails[i].to_delete) {
             mail_count++;
         }
     }
