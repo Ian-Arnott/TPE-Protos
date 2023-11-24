@@ -59,6 +59,7 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
                         return next;
                     }                    
                 }
+                return ERROR;
             }else if ( (stm_states) cliente->stm.current->state == TRANSACTION)
             {
                 for (size_t i = 0 ; i < trans_commands_dim; i++)
@@ -72,28 +73,26 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
 
                     }
                 }
-            }else
-            {
                 return ERROR;
             }
         }
         else if (event->type == PARSE_ERROR)
         {
-            // while (i < to_read) {
-            //     bool saw_carriage_return = ptr[i] == '\r';
-            //     char c = (char) buffer_read(&cliente->command_buffer);
-            //     if (c == '\r') {
-            //         saw_carriage_return = true;
-            //     } else if (c == '\n') {
-            //         if (saw_carriage_return) {
-            //             return ERROR;
-            //         }
-            //     } else {
-            //         saw_carriage_return = false;
-            //     }
-            //     i++;
-            // }
-            // return ERROR;
+            while (i < to_read) {
+                bool has_r = ptr[i] == '\r';
+                char c = (char) buffer_read(&cliente->command_buffer);
+                if (c == '\r') {
+                    has_r = true;
+                } else if (c == '\n') {
+                    if (has_r) {
+                        return ERROR;
+                    }
+                } else {
+                    has_r = false;
+                }
+                i++;
+            }
+            return ERROR;
         }
         
     }
