@@ -122,14 +122,14 @@ stm_states trans_capa(struct selector_key * key);
 stm_states auth_capa(struct selector_key * key);
 stm_states capa_write(struct selector_key * key, stm_states state);
 
-stm_states noop();
+stm_states noop(struct selector_key * key);
 stm_states noop_write(struct selector_key * key);
 
 stm_states auth_quit(struct selector_key * key);
 stm_states trans_quit(struct selector_key * key);
 stm_states quit_writ(struct selector_key * key, stm_states state);
 
-stm_states pop_stat();
+stm_states pop_stat(struct selector_key * key);
 stm_states stat_write(struct selector_key * key);
 
 #endif

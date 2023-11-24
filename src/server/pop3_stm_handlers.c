@@ -133,7 +133,7 @@ stm_states execute_trans_command(trans_commands command, struct selector_key * k
     switch(command)
     {
         case STAT:
-            return pop_stat();
+            return pop_stat(key);
             break;
         case LIST:
             return list(key);
@@ -148,7 +148,7 @@ stm_states execute_trans_command(trans_commands command, struct selector_key * k
             return rset(key);
             break;
         case NOOP:
-            return noop();
+            return noop(key);
             break;
         case TR_CAPA:
             return trans_capa(key);
