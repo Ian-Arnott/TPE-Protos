@@ -170,9 +170,9 @@ void accept_connection_handler(struct selector_key *key) {
 
 
     // Convierte en non blocking el socket nuevo.
-    // if (selector_fd_set_nio(client_fd) == -1) {
-    //     goto fail;
-    // }
+    if (selector_fd_set_nio(client_fd) == -1) {
+        goto fail;
+    }
 
     // log(INFO,"%s", "Initialized selector, will initialize STM.\n" )
     

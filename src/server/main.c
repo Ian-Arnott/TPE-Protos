@@ -206,14 +206,14 @@ main(const int argc, const char **argv) {
     signal(SIGTERM, sigterm_handler);
     signal(SIGINT,  sigterm_handler);
 
-    // if(selector_fd_set_nio(ipv4_server_socket) == -1) {
-    //     err_msg = "getting server socket flags";
-    //     goto finally;
-    // }    
-    // if(selector_fd_set_nio(ipv6_server_socket) == -1) {
-    //     err_msg = "getting server socket flags";
-    //     goto finally;
-    // }
+    if(selector_fd_set_nio(ipv4_server_socket) == -1) {
+        err_msg = "getting server socket flags";
+        goto finally;
+    }    
+    if(selector_fd_set_nio(ipv6_server_socket) == -1) {
+        err_msg = "getting server socket flags";
+        goto finally;
+    }
     // if(selector_fd_set_nio(ipv4_client_socket) == -1) {
     //     err_msg = "getting server socket flags";
     //     goto finally;
