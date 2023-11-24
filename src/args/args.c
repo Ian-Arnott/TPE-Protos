@@ -82,7 +82,7 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
     args->pop_port = 1110;
 
     args->mng_addr   = "127.0.0.1";
-    args->mng_port   = 6000;
+    args->mng_port   = 9090;
 
     strcpy(args->mail_directory, "./mails/");
     // args->mail_directory = "mails";
