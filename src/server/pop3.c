@@ -714,8 +714,11 @@ stm_states list(struct selector_key * key)
     log(DEBUG, "%s", "list command");
     connection * client = (connection *) key->data;
 
+    // reset all variables
     client->command.has_finished = false;
     client->command.has_error = false;
+    client->command.ok = false;
+    client->user_data.inbox.idx = 0;
 
     // mainly a write OP
     return TRANSACTION;
@@ -754,6 +757,7 @@ stm_states retr(struct selector_key * key)
     client->user_data.inbox.rtrv_fd = -1;
     client->command.has_error = false;
     client->command.has_finished = false;
+    client->command.ok = false;
 
     // atoi returns 0 on a non-number string
     // our args ends in \0
