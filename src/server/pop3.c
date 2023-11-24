@@ -191,7 +191,7 @@ void accept_connection_handler(struct selector_key *key) {
     client->active = true;
     
     // Registrar el nuevo socket cliente con el selector.
-    if (selector_register(key->s, client_fd, &client_handler, OP_READ, client) != SELECTOR_SUCCESS) {
+    if (selector_register(key->s, client_fd, &client_handler, OP_WRITE, client) != SELECTOR_SUCCESS) {
         goto fail;
     }
 
