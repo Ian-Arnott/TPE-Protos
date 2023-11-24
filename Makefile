@@ -30,7 +30,10 @@ $(OBJDIR) $(BINDIR):
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR) 
+	$(MAKE) -C client_src all
 
 all: $(TARGET) 
+	$(MAKE) -C client_src all
+
 
 .DEFAULT_GOAL := all

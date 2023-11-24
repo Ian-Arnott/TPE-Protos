@@ -92,7 +92,7 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
     args->max_mails = DEFAULT_MAX_MAILS;
 
     if ( argc <= 5){
-        log(LOG_ERROR,"%s", "ERROR Invalid arguments, usage: <POP3-PORT> <CLIENT-PORT> <ADMIN-PASS> -u user1:password1 -u user2:password2 ...");
+        log(LOG_ERROR,"%s", "ERROR Invalid arguments, usage: <POP3-PORT> <SERVER-PORT> <ADMIN-PASS> -u user1:password1 -u user2:password2 ...");
 		exit(1);
 	}
 

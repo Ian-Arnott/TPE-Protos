@@ -15,6 +15,10 @@
 #include "../logger/logger.h"
 #include "../args/args.h"
 #include "../server/pop3.h"
+
+#define USHRT_MAX       65535
+
+
 extern struct popargs args;
 extern struct statistics stats;
 
@@ -43,6 +47,25 @@ static int remove_user(const char *username) {
 
     return 0; // Success
 }
+
+static int change_password(const char *username, const char *new_password) {
+    int index = -1;
+    for (size_t i = 0; i < args.user_count; i++) {
+        if (strcmp(args.users[i].name, username) == 0) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1) {
+        return -1;
+    }
+
+    strcpy(args.users[index].pass, new_password);
+
+    return 0; // Success
+}
+
 
 static void parse_client(char *buffer, char *write_buffer, size_t n) {
     buffer[n] = '\0';
@@ -110,7 +133,7 @@ static void parse_client(char *buffer, char *write_buffer, size_t n) {
             if (token != NULL)
             {
                 char buffer[50];
-                char *username = strtok(token, ":");
+                char *username = strtok(token, " ");
                 if (username != NULL)
                 {
                     if (remove_user(username) < 0)
@@ -132,39 +155,61 @@ static void parse_client(char *buffer, char *write_buffer, size_t n) {
                     strcat(write_buffer, "Error: remove user usage: -r username:\n");
                     return;
             }
-            
         } else if (strcmp(token, "-c") == 0) {
-            // Handle -c option, change user's password
-            // Example: change_password();
             token = strtok(NULL, " ");
             if (token != NULL) {
-                // Assuming the format is username:newpassword
                 char *username = strtok(token, ":");
                 char *newpassword = strtok(NULL, ":");
                 if (username != NULL && newpassword != NULL) {
-                    // Example: change_password(username, newpassword);
+                    if (change_password(username, newpassword) < 0) {
+                        write_buffer[0] = 0;
+                        strcat(write_buffer, "Error: User not found for password change.\n");
+                        return;
+                    }
+                    strcat(write_buffer, "Password changed for user: ");
+                    strcat(write_buffer, username);
+                    strcat(write_buffer, "\n");
+                } else {
+                    write_buffer[0] = 0;
+                    strcat(write_buffer, "Error: change password usage: -c username:newpassword\n");
+                    return;
                 }
+            } else {
+                write_buffer[0] = 0;
+                strcat(write_buffer, "Error: change password usage: -c username:newpassword\n");
+                return;
             }
         } else if (strcmp(token, "-d") == 0) {
-            // Handle -d option, set a new maildir in args
-            // Example: set_maildir();
             token = strtok(NULL, " ");
-            if (token != NULL) {
-                // Example: set_maildir(token);
+            if (token != NULL)
+            {
+                char buffer[50];
+                char *maildir = strtok(token, " ");
+                if (maildir != NULL)
+                {
+                    strcpy(args.mail_directory, maildir);
+                    sprintf(buffer, "Maildir changed to: %s\n\n", token);
+                    strcat(write_buffer, buffer);
+                } else {
+                    write_buffer[0] = 0;
+                    strcat(write_buffer, "Error: add maildir usage: -d maildir:\n");
+                    return;
+                }
+            } else {
+                    write_buffer[0] = 0;
+                    strcat(write_buffer, "Error: add maildir usage: -d maildir:\n");
+                    return;
             }
-        } else if (strcmp(token, "-p") == 0) {
-            // Handle -p option, change the port value in args
-            // Example: change_port();
+        } else if (strcmp(token, "-m") == 0) {
             token = strtok(NULL, " ");
             if (token != NULL) {
-                // Example: change_port(atoi(token));
-            }
-        } else if (strcmp(token, "-P") == 0) {
-            // Handle -P option, change the management port value in args
-            // Example: change_management_port();
-            token = strtok(NULL, " ");
-            if (token != NULL) {
-                // Example: change_management_port(atoi(token));
+                unsigned long max = strtoul(token, NULL, 10);
+                args.max_mails = max;
+                strcat(write_buffer, "Mail maximum changed.\n");
+            } else {
+                write_buffer[0] = 0;
+                strcat(write_buffer, "Error: change maximum amount of mails usage: -m new_max\n");
+                return;
             }
         }
 
