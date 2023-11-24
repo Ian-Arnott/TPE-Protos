@@ -10,7 +10,7 @@ make clean
 make all
 ```
 
-Esto generara un archivo ejecutable *main* en la raiz del proyecto y otro *main* en la carpeta *client_src*
+Esto generara un archivo ejecutable *main* en la raiz del proyecto y otro *client* en la carpeta *client_src*
 
 ## Ejecucion
 
@@ -18,4 +18,60 @@ Para correr el servidor, en la raíz del proyecto correr el comando:
 ```./main <POP3_PORT> <SERVER_PORT> <ADMIN_PASS> -u <usuario1>:<contraseña1> .... -u <usuarioN>:<contraseñaN>```
 
 Reemplazar ```<POP3_PORT>``` por el puerto en el que el servidor tiene que atender nuevas conexiones.
-A considerar: el ```<usuario>``` debe coincidir con un nombre de directorio en la carpeta mails. De lo contrario, el usuario podrá loggearse al servidor pero no tendrá mails.
+A considerar: el ```<usuario>``` DEBE coincidir con un nombre de directorio en la carpeta mails. De lo contrario, el usuario podrá loggearse al servidor pero no tendrá una casilla asociada de mails.
+
+## Configuracion durante ejecucion
+
+Dentro del directorio client_src de la raiz del proyecto, se va a encontrar un ejectutable ```client``` que permite realizar conexiones UDP mediante el puerto de gestion para realizar cambios o solicitar las estadisticas.
+
+```bash
+./client <SERVER-PORT> <ADMIN-PASS> -l -s -m <newmax> -d <newmaildir> -u <newuser:pass> ... -r <user> ...
+```
+
+### Añadir/Registrar un usuario
+
+```bash
+./client <SERVER-PORT> <ADMIN-PASS> -u <newuser:pass>
+```
+
+Este comando permite agregar usuarios que no estaban presentes en el listado de usuarios original del servidor cuando se ejecuto por primera vez.  El único argumento es una cadena `newuser:pass` con la combinación `username:password` delimitado por `:` para el usuario que se desea crear.
+
+### Eliminar un usuario
+
+```bash
+./client <SERVER-PORT> <ADMIN-PASS> -r <user>
+```
+
+Este comando permite eliminar un usuario identificado por su nombre de usuario (username) en la cadena `user` . Este cambio no cerrara la conexión de ningún usuario ya conectado y autenticado.
+
+### Listar usuarios
+
+```bash
+./client <SERVER-PORT> <ADMIN-PASS> -l
+```
+
+Este comando permite listar los nombres de todos los usuarios registrados en el servidor.
+
+### Cambiar limite de mails
+
+```bash
+./client <SERVER-PORT> <ADMIN-PASS> -m <newmax>
+```
+
+Este comando permite cambiar la maxima cantidad de mails que se descargaran a la casilla de un usuario una vez que se haya autenticado. El argumento `newmax` es un numero entero indicando la cantidad deseada, el valor por defecto del servidor es 64. Este cambio no cargara o eliminara mails de las casillas de usuarios con sesiones activas, y solo tomara efecto para nuevas autenticaciones.
+
+### Mostrar estadísticas del servidor
+
+```bash
+./client <SERVER-PORT> <ADMIN-PASS> -s
+```
+
+Este comando permite observar en pantalla las estadísticas del servidor al momento de ser ejecutado el request. El cliente permite observar la cantidad histórica y actual de conexiones además de la cantidad histórica de bytes enviados.
+
+### Cambiar el directorio de mail
+
+```bash
+./client <SERVER-PORT> <ADMIN-PASS> -d <newmaildir>
+```
+
+Este comando permite cambiar el path (ubicación) del directorio donde el servidor deberá buscar los mails para los usuarios. El directorio elegido debe tener la estructura correcta, donde los mails para cada usuario deben encontrarse en un subdirectorio llamado exactamente igual que el nombre de usuario. El argumento `newmaildir` debe ser el path completo del directorio. Este cambio no tomara efecto para usuarios con conexiones activas.
