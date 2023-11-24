@@ -737,7 +737,7 @@ void read_mail(struct selector_key * key) {
     } else  {
         selector_set_interest_key(key, OP_NOOP);
     }
-    selector_set_interest(key->s, key->fd, OP_WRITE);
+    selector_set_interest(key->s, client->command.connection_fd, OP_WRITE);
 }
 
 // only needed for selector function transition
@@ -752,6 +752,8 @@ stm_states retr(struct selector_key * key)
     connection * client = (connection *) key->data;
 
     client->user_data.inbox.rtrv_fd = -1;
+    client->command.has_error = false;
+    client->command.has_finished = false;
 
     // atoi returns 0 on a non-number string
     // our args ends in \0
@@ -763,6 +765,8 @@ stm_states retr(struct selector_key * key)
     { // valid requested mail
         int fd = open(client->user_data.inbox.mails[idx].path, O_RDONLY);
         client->user_data.inbox.rtrv_fd = fd;
+        // must store selector fd for later access in read_mail
+        client->command.connection_fd = key->fd;
 
         if (fd == -1)
         {
@@ -779,7 +783,7 @@ stm_states retr(struct selector_key * key)
 
     }
 
-    client->command.has_error = true;
+    
     return TRANSACTION;
 
 

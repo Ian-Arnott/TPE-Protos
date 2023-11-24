@@ -69,6 +69,8 @@ typedef struct command_buff{
     bool has_finished;
     bool ok;
     char crlf;
+
+    int connection_fd;
 }command_buff;
 
 typedef struct connection{
