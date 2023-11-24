@@ -22,6 +22,7 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
 
     if (!buffer_can_read(&cliente->command_buffer))
     {
+        log(INFO,"%s","must write on command buffer");
         size_t write_dim;
         char * write_ptr = (char *) buffer_write_ptr(&cliente->command_buffer, &write_dim);
         // write on buffer
@@ -31,6 +32,7 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
         buffer_write_adv(&cliente->command_buffer, n);
     } // if cant read then write
     
+    log(DEBUG, "%s", "command buffer not blocked");
 
     // read buffer
     size_t to_read = 0;
@@ -44,6 +46,7 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
 
         if (event->type == VALID)
         {
+            log(DEBUG, "Current State: %u. Authorization = %u", cliente->stm.current->state, AUTHORIZATION);
             if ((stm_states) cliente->stm.current->state == AUTHORIZATION)
             {
                 for(size_t i = 0 ; i < auth_commands_dim; i++)
@@ -53,7 +56,7 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
                         stm_states next = execute_auth_command(i, key);
                         selector_set_interest_key(key,OP_WRITE);
                         return next;
-                    }
+                    }                    
                 }
             }else if ( (stm_states) cliente->stm.current->state == TRANSACTION)
             {
@@ -72,6 +75,25 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
                 return ERROR;
             }
         }
+        else if (event->type == PARSE_ERROR)
+        {
+            // while (i < to_read) {
+            //     bool saw_carriage_return = ptr[i] == '\r';
+            //     char c = (char) buffer_read(&cliente->command_buffer);
+            //     if (c == '\r') {
+            //         saw_carriage_return = true;
+            //     } else if (c == '\n') {
+            //         if (saw_carriage_return) {
+            //             return ERROR;
+            //         }
+            //     } else {
+            //         saw_carriage_return = false;
+            //     }
+            //     i++;
+            // }
+            // return ERROR;
+        }
+        
     }
     
     return current_state;
@@ -256,19 +278,34 @@ stm_states authorization_read(struct selector_key * key){
 }
 stm_states authorization_write(struct selector_key * key){
     log(INFO, "%s", "authorization_write");
-    
+    connection * client = (connection *) key->data;
+    if ((int)client->last_states == -1)
+    {
+        log(DEBUG, "%s", "GREET!");
+        char * message = "+OK POP3 server ready\r\n";
+        size_t write_bytes;
+        char * ptr = (char *) buffer_write_ptr(&client->server_buffer, &write_bytes);
+        if (write_bytes >= strlen(message)) {
+            client->command.has_finished = true;
+            strncpy(ptr, message, strlen(message));
+            buffer_write_adv(&client->server_buffer, (ssize_t) strlen(message));
+            client->last_states = AUTHORIZATION;
+        }    
+    }
     return write_command(key, AUTHORIZATION);
 }
 
 void transaction_arrival(stm_states state, struct selector_key * key){
 
     connection * client = (connection *) key->data;
-
+// /mails/facha
     // must reconnect to update mails
     if (client->user_data.inbox.dim != 0) return;
 
     DIR * dir = opendir(client->user_data.inbox.mail_dir);
     struct dirent * file;
+
+    log(DEBUG, "El mail_dir: %s  -- del user: %s  -- exito: %d ", client->user_data.inbox.mail_dir, client->user_data.username, dir != NULL);
 
     while (client->user_data.inbox.dim < args.max_mails && (file = readdir(dir)) != NULL)
     {

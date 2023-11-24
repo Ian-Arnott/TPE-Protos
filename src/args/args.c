@@ -84,6 +84,9 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
     args->mng_addr   = "127.0.0.1";
     args->mng_port   = 6000;
 
+    strcpy(args->mail_directory, "./mails/");
+    // args->mail_directory = "mails";
+
     // MAX MAILS per client
 
     args->max_mails = DEFAULT_MAX_MAILS;

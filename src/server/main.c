@@ -168,6 +168,8 @@ main(const int argc, const char **argv) {
         printf("User %d : %s : %s\n", i, args.users[i].name, args.users[i].pass);
     }
 
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
     close(STDIN_FILENO);
 
 
@@ -204,14 +206,14 @@ main(const int argc, const char **argv) {
     signal(SIGTERM, sigterm_handler);
     signal(SIGINT,  sigterm_handler);
 
-    if(selector_fd_set_nio(ipv4_server_socket) == -1) {
-        err_msg = "getting server socket flags";
-        goto finally;
-    }    
-    if(selector_fd_set_nio(ipv6_server_socket) == -1) {
-        err_msg = "getting server socket flags";
-        goto finally;
-    }
+    // if(selector_fd_set_nio(ipv4_server_socket) == -1) {
+    //     err_msg = "getting server socket flags";
+    //     goto finally;
+    // }    
+    // if(selector_fd_set_nio(ipv6_server_socket) == -1) {
+    //     err_msg = "getting server socket flags";
+    //     goto finally;
+    // }
     // if(selector_fd_set_nio(ipv4_client_socket) == -1) {
     //     err_msg = "getting server socket flags";
     //     goto finally;

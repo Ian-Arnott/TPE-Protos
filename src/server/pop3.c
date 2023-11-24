@@ -141,8 +141,6 @@ void client_write(struct selector_key *key) {
         selector_unregister_fd(key->s, key->fd);
         return;
     }
-
-
     buffer_read_adv(&client->server_buffer, n);
     // stats.transferred_bytes += n;
 
@@ -164,19 +162,19 @@ void accept_connection_handler(struct selector_key *key) {
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
     const int client_fd = accept(key->fd, (struct sockaddr *)&client_addr, &client_addr_len);
-
-    connection * client = calloc(1, sizeof(connection));
-
     if (client_fd == -1) {
         goto fail;
     }
 
-    // Convierte en non blocking el socket nuevo.
-    if (selector_fd_set_nio(client_fd) == -1) {
-        goto fail;
-    }
+    connection * client = calloc(1, sizeof(connection));
 
-    log(INFO,"%s", "Initialized selector, will initialize STM.\n" )
+
+    // Convierte en non blocking el socket nuevo.
+    // if (selector_fd_set_nio(client_fd) == -1) {
+    //     goto fail;
+    // }
+
+    // log(INFO,"%s", "Initialized selector, will initialize STM.\n" )
     
     client->stm.states = stm_states_table;
     client->stm.initial = AUTHORIZATION;
@@ -189,6 +187,7 @@ void accept_connection_handler(struct selector_key *key) {
     client->user_data.inbox.rtrv_fd = -1;
     buffer_init(&client->command.retr_mail_buffer, MAX_BUFF_SIZE, (uint8_t *) client->command.mail_buffer);
     client->user_data.inbox.mails = calloc(args.max_mails, sizeof(mail));
+    strcpy(client->user_data.inbox.mail_dir, args.mail_directory);
     client->active = true;
     
     // Registrar el nuevo socket cliente con el selector.
@@ -197,19 +196,7 @@ void accept_connection_handler(struct selector_key *key) {
     }
 
     log(DEBUG,"%s","Established new POP3 connection");
-    if ((int)client->last_states == -1)
-    {
-        log(DEBUG, "%s", "GREET!");
-        char * message = "+OK POP3 server ready\r\n";
-        size_t write_bytes;
-        char * ptr = (char *) buffer_write_ptr(&client->server_buffer, &write_bytes);
-        if (write_bytes >= strlen(message)) {
-            client->command.has_finished = true;
-            strncpy(ptr, message, strlen(message));
-            buffer_write_adv(&client->server_buffer, (ssize_t) strlen(message));
-            client->last_states = AUTHORIZATION;
-        }    
-    }
+
     // stats.concurrent_connections++;
     // stats.historical_connections++;
     return;
@@ -651,7 +638,9 @@ stm_states pass(struct selector_key * key)
         if (strcmp(args.users[server_idx].pass, requested_pass) == 0)
         { // correct password
             client->user_data.auth = true;
-            strcpy(client->user_data.inbox.mail_dir,"/home/ian/Documents/Github/TPE-Protos/mails/facha");
+            // strcpy(client->user_data.inbox.mail_dir,"/home/ian/Documents/Github/TPE-Protos/mails/facha");
+            // strcat(client->user_data.inbox.mail_dir, "/");
+            strcat(client->user_data.inbox.mail_dir, client->user_data.username);
             // client->user_data.inbox.mail_dir = "/home/ian/Documents/Github/TPE-Protos/mails/facha";
             return TRANSACTION;
         }

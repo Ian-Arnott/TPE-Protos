@@ -8,6 +8,7 @@
 #define MAX_USERS 1024
 #define MAX_USER_LENGTH 64
 #define DEFAULT_MAX_MAILS 64
+#define MAIL_DIR_PATH 4096
 
 // // USER
 // typedef struct {
@@ -70,6 +71,8 @@ struct popargs {
     
     struct users    users[MAX_USERS];
     unsigned int    user_count;
+
+    char mail_directory[MAIL_DIR_PATH];
 
     size_t max_mails;
 };
