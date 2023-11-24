@@ -5,6 +5,9 @@
 # Prerequisites
 *.d
 
+# Testing mails
+mails/
+
 # Object files
 *.o
 *.ko

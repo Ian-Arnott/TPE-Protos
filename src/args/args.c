@@ -4,12 +4,30 @@
 #include <string.h>    /* memset */
 #include <errno.h>
 #include <getopt.h>
-
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <strings.h>
+#include <dirent.h>
 #include "args.h"
 
 #define MAX_PORT 65535
 
 // popargs args;
+
+static bool is_valid_directory(const char *path) {
+    // Try to open the directory
+    DIR *dir = opendir(path);
+
+    // Check if the directory can be opened
+    if (dir != NULL) {
+        // Directory opened successfully, so close it and return 1 (true)
+        closedir(dir);
+        return true;
+    } else {
+        // Directory couldn't be opened, so return 0 (false)
+        return false;
+    }
+}
 
 static unsigned short
 port(const char *s) {
@@ -50,30 +68,23 @@ version(void) {
 }
 
 static void
-usage(const char *progname) {
+usage(const char * progname) {
     fprintf(stderr,
-        "Usage: %s [OPTION]...\n"
+        "Usage: %s [OPTIONS]...\n"
         "\n"
-        "   -h               Imprime la ayuda y termina.\n"
-        "   -l <SOCKS addr>  Dirección donde servirá el proxy SOCKS.\n"
-        "   -L <conf  addr>  Dirección donde servirá el servicio de management.\n"
-        "   -p <SOCKS port>  Puerto entrante conexiones SOCKS.\n"
-        "   -P <conf port>   Puerto entrante conexiones configuracion\n"
-        "   -u <name>:<pass> Usuario y contraseña de usuario que puede usar el proxy. Hasta 10.\n"
-        "   -v               Imprime información sobre la versión versión y termina.\n"
-        "\n"
-        "   --doh-ip    <ip>    \n"
-        "   --doh-port  <port>  XXX\n"
-        "   --doh-host  <host>  XXX\n"
-        "   --doh-path  <host>  XXX\n"
-        "   --doh-query <host>  XXX\n"
-
+        "   -h                               This help message.\n\n"
+        "   -d <maildir>                     Path to directory where it'll find all users with their mails.\n\n"
+        "   -p <pop3 server port>            Port for POP3 server connections.\n\n"
+        "   -P <configuration server port>   Port for configuration client connections\n\n"
+        "   -u <user>:<password>             User and password for a user which can use the POP3 server. Up to 10.\n\n"
+        "   -t <token>                       Authentication token for the client.\n\n"
+        "   -v                               Prints version information.\n"
         "\n",
         progname);
     exit(1);
 }
 
-
+// 
 void 
 parse_args(const int argc, const char **argv, struct popargs *args) {
     memset(args, 0, sizeof(*args)); // sobre todo para setear en null los punteros de users
@@ -101,8 +112,15 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
     
 // TODO: parse users and create their data
 
+//
     bool error = false;
 	for ( int i = 1; i < argc && !error; i++){
+
+        if(strcmp(argv[1],"-h") == 0)
+        {
+            const char * program = "pop3d";
+            usage(program);
+        }
         
 		if(strcmp(argv[i],"-u") == 0){
 			if ( i + 1 < argc){
@@ -120,15 +138,52 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
                 // TODO: Logger
 				log(LOG_ERROR,"%s","Invalid Usage: format -u must be followed by user:pass\n");
 				error = true;
-			}
-		}else if (i == 1){
-            args->pop_port = port(argv[i]);
-        }else if (i == 2)
+			}   
+		} else if(strcmp(argv[i],"-d") == 0)
         {
-            args->mng_port = port(argv[i]);
-        }else if (i == 3)
+            if ( i + 1 < argc && is_valid_directory(argv[i+1]) == true){
+				strcpy(args->mail_directory, argv[i+1]);
+				i++;
+			} else {
+                // TODO: Logger
+				log(LOG_ERROR,"%s","Invalid Usage: format -d must be followed by maildir -- maildir might me invalid\n");
+				error = true;
+			}   
+        } else if(strcmp(argv[i],"-p") == 0)
         {
-            strcpy(args->admin, argv[i]);
+            if ( i + 1 < argc){
+                args->pop_port = port(argv[i+1]);
+				i++;
+			} else {
+                // TODO: Logger
+				log(LOG_ERROR,"%s","Invalid Usage: format -p must be followed by a port\n");
+				error = true;
+			}   
+        } else if(strcmp(argv[i],"-P") == 0)
+        {
+            if ( i + 1 < argc){
+                args->mng_port = port(argv[i+1]);
+				i++;
+			} else {
+                // TODO: Logger
+				log(LOG_ERROR,"%s","Invalid Usage: format -P must be followed by a port\n");
+				error = true;
+			}   
+        } else if(strcmp(argv[i],"-t") == 0)
+        {
+            if ( i + 1 < argc){
+                strcpy(args->admin, argv[i+1]);
+				i++;
+			} else {
+                // ./pop3d -d dir -u user:pass -P 9090 -p 1110 -t pass 
+                // TODO: Logger
+				log(LOG_ERROR,"%s","Invalid Usage: format -t must be followed by a token\n");
+				error = true;
+			}   
+        }
+        else if(strcmp(argv[i],"-v") == 0)
+        {
+            version();
         }
         
 	}
@@ -137,66 +192,10 @@ parse_args(const int argc, const char **argv, struct popargs *args) {
         log(LOG_ERROR,"%s", ". Invalid arguments\n");
         exit(1);
     }
-
-    
-    // while (true) {
-    //     int option_index = 0;
-    //     static struct option long_options[] = {
-    //         { "doh-ip",    required_argument, 0, 0xD001 },
-    //         { "doh-port",  required_argument, 0, 0xD002 },
-    //         { "doh-host",  required_argument, 0, 0xD003 },
-    //         { "doh-path",  required_argument, 0, 0xD004 },
-    //         { "doh-query", required_argument, 0, 0xD005 },
-    //         { 0,           0,                 0, 0 }
-    //     };
-
-    //     c = getopt_long(argc, argv, "hl:L:Np:P:u:v", long_options, &option_index);
-    //     if (c == -1)
-    //         break;
-
-    //     switch (c) {
-    //         case 'h':
-    //             usage(argv[0]);
-    //             break;
-    //         case 'l':
-    //             args->pop_addr = optarg;
-    //             break;
-    //         case 'L':
-    //             args->mng_addr = optarg;
-    //             break;
-    //         case 'P':
-    //             args->mng_port   = port(optarg);
-    //             break;
-    //         case 'u':
-    //             if(nusers >= MAX_USERS) {
-    //                 fprintf(stderr, "maximun number of command line users reached: %d.\n", MAX_USERS);
-    //                 exit(1);
-    //             } else {
-    //                 user(optarg, args->users + nusers);
-    //                 nusers++;
-    //             }
-    //             break;
-    //         case 'v':
-    //             version();
-    //             exit(0);
-    //             break;
-    //         default:
-    //             fprintf(stderr, "unknown argument %d.\n", c);
-    //             exit(1);
-    //     }
-
-    // }
-    // if (optind < argc) {
-    //     fprintf(stderr, "argument not accepted: ");
-    //     while (optind < argc) {
-    //         fprintf(stderr, "%s ", argv[optind++]);
-    //     }
-    //     fprintf(stderr, "\n");
-    //     exit(1);
-    // }
-
     
 }
+
+
 
 bool parse_user_and_password(const char * string){
     int idx; // current char

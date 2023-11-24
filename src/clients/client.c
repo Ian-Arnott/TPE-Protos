@@ -200,18 +200,18 @@ static void parse_client(char *buffer, char *write_buffer, size_t n) {
                     strcat(write_buffer, "Error: add maildir usage: -d maildir:\n");
                     return;
             }
-        } else if (strcmp(token, "-m") == 0) {
-            token = strtok(NULL, " ");
-            if (token != NULL) {
-                unsigned long max = strtoul(token, NULL, 10);
-                args.max_mails = max;
-                strcat(write_buffer, "Mail maximum changed.\n");
-            } else {
-                write_buffer[0] = 0;
-                strcat(write_buffer, "Error: change maximum amount of mails usage: -m new_max\n");
-                return;
-            }
-        }
+        } //else if (strcmp(token, "-m") == 0) {
+        //     token = strtok(NULL, " ");
+        //     if (token != NULL) {
+        //         unsigned long max = strtoul(token, NULL, 10);
+        //         args.max_mails = max;
+        //         strcat(write_buffer, "Mail maximum changed.\n");
+        //     } else {
+        //         write_buffer[0] = 0;
+        //         strcat(write_buffer, "Error: change maximum amount of mails usage: -m new_max\n");
+        //         return;
+        //     }
+        // }
 
         token = strtok(NULL, " ");
     }

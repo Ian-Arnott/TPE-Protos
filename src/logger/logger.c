@@ -3,7 +3,7 @@
 
 #include "logger.h"
 
-LOG_LEVEL current_level = DEBUG;
+LOG_LEVEL current_level = LOG_ERROR;
 
 
 void setLogLevel(LOG_LEVEL newLevel) {

@@ -162,7 +162,7 @@ main(const int argc, const char **argv) {
 
     parse_args(argc, argv, &args);
 
-    printf("Estos son los argumentos.\n Puerto POP3: %d. \n Puerto Cliente: %d. \n Admin: %s. \n", args.pop_port,args.pop_port, args.admin);
+    printf("Estos son los argumentos.\n Puerto POP3: %d. \n Puerto Cliente: %d. \n Admin password: %s. \n", args.pop_port,args.mng_port, args.admin);
     for (unsigned int i = 0; i < args.user_count; i++)
     {
         printf("User %d : %s : %s\n", i, args.users[i].name, args.users[i].pass);

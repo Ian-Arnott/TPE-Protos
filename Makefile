@@ -10,7 +10,7 @@ OBJDIR = obj
 SOURCES = $(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/*/*.c)
 OBJECTS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SOURCES))
 
-TARGET = main
+TARGET = pop3d
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $^ -o $@

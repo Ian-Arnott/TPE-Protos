@@ -20,12 +20,12 @@ int main(int argc, char *argv[]) {
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
     if (argc < 3) {
-        fprintf(stderr,"Usage: %s <SERVER-PORT> <ADMIN-PASS> -l -s -m <newmax> -d <newmaildir> -u <newuser:pass> ... -r <user> ... \n", argv[0]);
+        fprintf(stderr,"Usage: %s <SERVER-PORT> <ADMIN-PASS> -l -s -d <newmaildir> -u <newuser:pass> ... -r <user> ... \n", argv[0]);
         exit(1);
     } else if (isalpha(argv[1][0]))
     {
         fprintf(stderr,"<SERVER-PORT> Must be a number\n");
-        fprintf(stderr,"Usage: %s <SERVER-PORT> <ADMIN-PASS> -l -s -m <newmax> -d <newmaildir> -u <newuser:pass> ... -r <user> ... \n", argv[0]);
+        fprintf(stderr,"Usage: %s <SERVER-PORT> <ADMIN-PASS> -l -s -d <newmaildir> -u <newuser:pass> ... -r <user> ... \n", argv[0]);
         exit(1);
     }
     

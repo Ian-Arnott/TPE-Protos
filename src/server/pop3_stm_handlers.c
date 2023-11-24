@@ -312,6 +312,12 @@ void transaction_arrival(stm_states state, struct selector_key * key){
     DIR * dir = opendir(client->user_data.inbox.mail_dir);
     struct dirent * file;
 
+    if (dir == NULL)
+    {
+        log(LOG_ERROR, "%s", "User does not have a mail directory")
+        return;
+    }
+
     log(DEBUG, "El mail_dir: %s  -- del user: %s  -- exito: %d ", client->user_data.inbox.mail_dir, client->user_data.username, dir != NULL);
 
     while (client->user_data.inbox.dim < args.max_mails && (file = readdir(dir)) != NULL)

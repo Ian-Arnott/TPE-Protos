@@ -10,7 +10,8 @@
 #include "../args/args.h"
 
 #define MAX_CLIENTS 512
-#define MAX_BUFF_SIZE 1024
+// #define MAX_BUFF_SIZE 3072
+#define MAX_BUFF_SIZE 2048 // mayor performance observada
 #define MAX_COMMAND_BUFF 64
 #define MAX_PATH 4096
 #define MAX_USERNAME 128

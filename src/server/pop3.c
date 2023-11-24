@@ -287,6 +287,9 @@ stm_states pass_write(struct selector_key * key) {
         strncpy(str, error_message, error_message_size);
         // strncpy(str + error_message_size, "\r\n", 2);
         size = error_message_size;
+        buffer_write_adv(&client->server_buffer,size);
+        client->command.has_finished = true;
+        return AUTHORIZATION;
     } else
     {
         log(DEBUG, "message_size = %lu , size = %lu",message_size, size);
@@ -606,6 +609,9 @@ stm_states user(struct selector_key * key)
     connection * client = (connection *) key->data;
     char * requested_username = client->command.args;
 
+    client->command.has_error = false;
+    client->command.has_finished = false;
+
     // check given user arg ==  registered user
     for ( size_t i = 0 ; i < args.user_count ; i++ )
     {
@@ -619,6 +625,7 @@ stm_states user(struct selector_key * key)
         }
     }
 
+    client->command.has_error = true;
     client->user_data.requested = false;
     client->user_data.auth = false;
     client->user_data.username_index = -1;
@@ -632,6 +639,9 @@ stm_states pass(struct selector_key * key)
 
     connection * client = (connection *) key->data;
     char * requested_pass = client->command.args;
+
+    client->command.has_error = false;
+    client->command.has_finished = false;
     
     if ( client->user_data.requested == true )
     { // user was requested
@@ -643,11 +653,12 @@ stm_states pass(struct selector_key * key)
             // strcpy(client->user_data.inbox.mail_dir,"/home/ian/Documents/Github/TPE-Protos/mails/facha");
             // strcat(client->user_data.inbox.mail_dir, "/");
             strcat(client->user_data.inbox.mail_dir, client->user_data.username);
+            strcat(client->user_data.inbox.mail_dir, "/cur");
             // client->user_data.inbox.mail_dir = "/home/ian/Documents/Github/TPE-Protos/mails/facha";
             return AUTHORIZATION;
         }
     }
-
+    client->command.has_error = true;
     return AUTHORIZATION;
 
 }
@@ -785,6 +796,8 @@ stm_states retr(struct selector_key * key)
             return TRANSACTION;
         }
 
+    }else{
+        client->command.has_error = true;
     }
 
     
