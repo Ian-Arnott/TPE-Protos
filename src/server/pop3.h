@@ -16,8 +16,8 @@
 #define MAX_USERNAME 128
 
 struct statistics {
-    unsigned long historical_connections;
-    unsigned long concurrent_connections;
+    unsigned long historical;
+    unsigned long concurrent;
     unsigned long transferred_bytes;
 };
 

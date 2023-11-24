@@ -63,6 +63,8 @@ struct socks5args {
     struct users    users[MAX_USERS];
 };
 
+
+
 struct popargs {
     char           *pop_addr; // localhost
     unsigned short  pop_port; // 110
@@ -78,6 +80,8 @@ struct popargs {
 
     size_t max_mails;
 };
+
+
 
 /**
  * Interpreta la linea de comandos (argc, argv) llenando

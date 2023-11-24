@@ -120,7 +120,7 @@ void client_close(struct selector_key *key) {
     }
     free(client);
     close(key->fd);
-    stats.concurrent_connections--;
+    stats.concurrent--;
 
     log(DEBUG, "%s", "Finished POP3 connection with a client");
 }
@@ -197,8 +197,8 @@ void accept_connection_handler(struct selector_key *key) {
 
     log(DEBUG,"%s","Established new POP3 connection");
 
-    stats.concurrent_connections++;
-    stats.historical_connections++;
+    stats.concurrent++;
+    stats.historical++;
     return;
 
 fail:
