@@ -1,5 +1,8 @@
 #include "pop3_stm_handlers.h"
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <string.h>
+#include <strings.h>
 
 
 // ---- SERVER ARGS ----- //
@@ -7,11 +10,11 @@ extern struct popargs args;
 
 
 // ES MUY IMPORTANTE QUE LOS COMANDOS ESTEN EN EL MISMO ORDEN QUE EL ENUM 
-char ** auth_state_commands = {"USER", "PASS", "CAPA", "QUIT"};
-size_t auth_commands_dim = sizeof(auth_state_commands);
+char * auth_state_commands[] = {"USER", "PASS", "CAPA", "QUIT"};
+size_t auth_commands_dim = 4;
 
-char ** trans_state_commands = {"STAT", "LIST", "RETR", "DELE", "RSET", "NOOP", "CAPA", "QUIT"};
-size_t trans_commands_dim = sizeof(trans_state_commands);
+char * trans_state_commands[] = {"STAT", "LIST", "RETR", "DELE", "RSET", "NOOP", "CAPA", "QUIT"};
+size_t trans_commands_dim = 8;
 
 stm_states read_command(struct selector_key * key, stm_states current_state) {
     connection * cliente = (connection*) key->data;
@@ -31,46 +34,43 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
 
     // read buffer
     size_t to_read = 0;
-    char * ptr = buffer_read_ptr(&cliente->command_buffer, &to_read);
+    char * ptr = (char *) buffer_read_ptr(&cliente->command_buffer, &to_read);
     
     for ( size_t i = 0 ; i < to_read; i++)
     { // parse buffer
         // parse one char at a time
-        struct parser_event * event = parser_feed(cliente->parser, ptr[i], key->data);
+        const struct parser_event * event = parser_feed(cliente->parser, ptr[i], key->data);
         buffer_read_adv(&cliente->command_buffer, 1);
 
         if (event->type == VALID)
         {
-            if (cliente->stm.current == AUTHORIZATION)
+            if ((stm_states) cliente->stm.current->state == AUTHORIZATION)
             {
-                for(int i = 0 ; i < auth_commands_dim ; i++)
+                for(size_t i = 0 ; i < auth_commands_dim; i++)
                 {
                     if (strcasecmp(auth_state_commands[i], cliente->command.command) == 0)
                     { // valid authorization command
                         stm_states next = execute_auth_command(i, key);
-                        //interest
+                        selector_set_interest_key(key,OP_WRITE);
                         return next;
                     }
                 }
-            }else if (cliente->stm.current == TRANSACTION)
+            }else if ( (stm_states) cliente->stm.current->state == TRANSACTION)
             {
-                for (int i = 0 ; i < trans_commands_dim ; i++)
+                for (size_t i = 0 ; i < trans_commands_dim; i++)
                 {
                     if (strcasecmp(trans_state_commands[i], cliente->command.command) == 0)
                     { // valid transactional command
                         stm_states next = execute_trans_command(i, key);
-                        // selector_set_interest_key(key,OP_READ); FIND OUT WHICH INTEREST
+                        selector_set_interest_key(key,OP_WRITE);
                         return next;
 
                     }
                 }
-                
-                
             }else
             {
                 return ERROR;
             }
-            strcasecmp();
         }
     }
     
@@ -82,71 +82,67 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
 
 stm_states execute_auth_command(auth_commands command, struct selector_key * key)
 {
+    log(DEBUG, "%s", "auth command dispatcher");
     switch(command)
     {
         case USER:
             return user(key);
-            // do stuff
-            // check length / user exists / etc
-            // update key with authenticated connection data
-            // command.hasError = false
-            // return authorization state // aun falta PASS
-            // transitions come from parser
-            // call write_command() to give client info
             break;
         case PASS:
             return pass(key);
             break;
         case AU_CAPA:
-            return capa(key);
+            return auth_capa(key);
             break;
         case AU_QUIT:
-            return quit(key);
+            return auth_quit(key);
             break;
+        default:
+            return AUTHORIZATION;
     }
 
-    return 1;
 }
 
-int execute_trans_command(trans_commands command, struct selector_key * key)
+stm_states execute_trans_command(trans_commands command, struct selector_key * key)
 {
+    log(DEBUG, "%s", "trans command dispatcher");
     switch(command)
     {
         case STAT:
-            //stat();
+            return pop_stat();
             break;
         case LIST:
-            list(key);
+            return list(key);
             break;
         case RETR:
-            retr(key);
+            return retr(key);
             break;
         case DELE:
-            dele(key);
+            return dele(key);
             break;
         case RSET:
-            rset(key);
+            return rset(key);
             break;
         case NOOP:
-            noop();
+            return noop();
             break;
         case TR_CAPA:
-            capa(key);
+            return trans_capa(key);
             break;
         case TR_QUIT:
+            return trans_quit(key); 
             break;
+        default:
+            return TRANSACTION;
     }
-
-    return 1;
 }
 
 // End of RtSbU
 
 stm_states write_command(struct selector_key * key, stm_states current_state) {
     connection * client = (connection *) key->data;
-    char * ptr;
 
-    if (buffer_can_write(&client->server_buff))
+    if (buffer_can_write(&client->server_buffer))
     {
         if (current_state == AUTHORIZATION)
         {
@@ -206,6 +202,7 @@ stm_states auth_writer(struct selector_key * key, auth_commands command){
         return quit_writ(key, AUTHORIZATION);
         break;
     default:
+        return AUTHORIZATION;
         break;
     }
 }
@@ -240,7 +237,7 @@ stm_states trans_writer(struct selector_key * key, trans_commands command){
             break;
     }
 
-    return 1;
+    return TRANSACTION;
 }
 
 //End of RfS.
@@ -259,20 +256,7 @@ stm_states authorization_read(struct selector_key * key){
 }
 stm_states authorization_write(struct selector_key * key){
     log(INFO, "%s", "authorization_write");
-    connection * client = key->data;
-    if (client->last_states == -1)
-    {
-        char * message = "+OK POP3 server ready\r\n";
-        size_t write_bytes;
-        char * ptr = (char *) buffer_write_ptr(&client->server_buff, &write_bytes);
-        if (write_bytes >= strlen(message)) {
-            client->command.has_finished = true;
-            strncpy(ptr, message, strlen(message));
-            buffer_write_adv(&client->server_buff, (ssize_t) strlen(message));
-            client->last_states = AUTHORIZATION;
-        }    
-        return AUTHORIZATION;
-    }
+    
     return write_command(key, AUTHORIZATION);
 }
 
@@ -348,11 +332,11 @@ stm_states error_write(struct selector_key * key){
     connection * client = (connection *) key->data;
     char * message = "-ERR Invalid Command\r\n";
     size_t write_bytes;
-    char * ptr = (char *) buffer_write_ptr(&client->server_buff, &write_bytes);
+    char * ptr = (char *) buffer_write_ptr(&client->server_buffer, &write_bytes);
     if (write_bytes >= strlen(message)) {
         client->command.has_finished = true;
         strncpy(ptr, message, strlen(message));
-        buffer_write_adv(&client->server_buff, (ssize_t) strlen(message));
+        buffer_write_adv(&client->server_buffer, (ssize_t) strlen(message));
         return client->last_states;
     }    
     return ERROR;

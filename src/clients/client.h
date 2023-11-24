@@ -5,15 +5,9 @@
 
 #include "../selector/selector.h"
 #define MAX_CLIENT_BUFFER 8192
-
-typedef enum {
-    CLIENT_HEADER = 0,
-    CLIENT_COMMAND,
-    CLIENT_ID,
-    CLIENT_TOKEN,
-    CLIENT_CONTENT,
-    CLIENT_PARSER_STATES_COUNT
-} client_parser_states;
+#define CLIENT_ID_LENGTH 11
+#define CLIENT_TOKEN_LENGTH 7
+#define CLIENT_CONTENT_LENGTH 255
 
 typedef enum client_commands{
     U,
@@ -24,7 +18,6 @@ typedef enum client_commands{
     S,
     L
 }client_commands;
-
 
 void accept_client_handler(struct selector_key * key);
 

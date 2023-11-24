@@ -47,8 +47,58 @@ static int setup_ipv4_tcp_socket(unsigned long port) {
     // TODO: logger
     fprintf(stdout, "Listening IPv4 on TCP port %d\n", args.pop_port);
 
+
     // man 7 ip. no importa reportar nada si falla.
     setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+
+    if(bind(server, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
+        return -1;
+    }
+
+    if (listen(server, 20) < 0) {
+        return -1;
+    }
+    return server;
+}
+
+static int setup_ipv4_udp_socket(unsigned long port) {
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port        = htons(args.pop_port);
+
+    const int server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if(server < 0) {
+        return -1;        
+    }
+    // TODO: logger
+    fprintf(stdout, "Listening IPv4 on UDP port %d\n", args.pop_port);
+
+    if(bind(server, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
+        return -1;
+    }
+
+    if (listen(server, 20) < 0) {
+        return -1;
+    }
+    return server;
+}
+
+static int setup_ipv6_udp_socket(unsigned long port) {
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family      = AF_INET6;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port        = htons(args.pop_port);
+
+    const int server = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+    if(server < 0) {
+        return -1;        
+    }
+    // TODO: logger
+    fprintf(stdout, "Listening IPv6 on UDP port %d\n", args.pop_port);
+    setsockopt(server, IPPROTO_IPV6, IPV6_V6ONLY, &(int){ 1 }, sizeof(int));
 
     if(bind(server, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
         return -1;
@@ -77,10 +127,9 @@ static int setup_ipv6_tcp_socket(unsigned long port) {
     }
 
     // TODO: logger
-    fprintf(stdout, "Listening IPv4 on TCP port %d\n", args.pop_port);
+    fprintf(stdout, "Listening IPv6 on TCP port %d\n", args.pop_port);
 
     setsockopt(server, IPPROTO_IPV6, IPV6_V6ONLY, &(int){ 1 }, sizeof(int));
-    // man 7 ip
     setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
     if (bind(server, (struct sockaddr *) &address, address_length) < 0) {
@@ -105,8 +154,8 @@ main(const int argc, const char **argv) {
 
     int ipv4_server_socket = -1;
     int ipv6_server_socket = -1;
-    int ipv4_client_socket = -1;
-    int ipv6_client_socket = -1;
+    // int ipv4_client_socket = -1;
+    // int ipv6_client_socket = -1;
 
     connection clients[MAX_CLIENTS];
     memset(&clients,0,sizeof(clients));
@@ -138,16 +187,16 @@ main(const int argc, const char **argv) {
         err_msg = "Error setting up IPv6 TCP socket";
         goto finally;
     }
-    ipv4_client_socket = setup_ipv4_udp_socket(args.mng_port);
-    if (ipv4_client_socket < 0) {
-        err_msg = "Error setting up IPv4 UDP socket";
-        goto finally;
-    }
-    ipv6_client_socket = setup_ipv6_udp_socket(args.mng_addr);
-    if (ipv6_client_socket < 0) {
-        err_msg = "Error setting up IPv6 UDP socket";
-        goto finally;
-    }
+    // ipv4_client_socket = setup_ipv4_udp_socket(args.mng_port);
+    // if (ipv4_client_socket < 0) {
+    //     err_msg = "Error setting up IPv4 UDP socket";
+    //     goto finally;
+    // }
+    // ipv6_client_socket = setup_ipv6_udp_socket(args.mng_port);
+    // if (ipv6_client_socket < 0) {
+    //     err_msg = "Error setting up IPv6 UDP socket";
+    //     goto finally;
+    // }
     
     
     // registrar sigterm es útil para terminar el programa normalmente.
@@ -163,14 +212,14 @@ main(const int argc, const char **argv) {
         err_msg = "getting server socket flags";
         goto finally;
     }
-    if(selector_fd_set_nio(ipv4_client_socket) == -1) {
-        err_msg = "getting server socket flags";
-        goto finally;
-    }
-    if(selector_fd_set_nio(ipv6_client_socket) == -1) {
-        err_msg = "getting server socket flags";
-        goto finally;
-    }
+    // if(selector_fd_set_nio(ipv4_client_socket) == -1) {
+    //     err_msg = "getting server socket flags";
+    //     goto finally;
+    // }
+    // if(selector_fd_set_nio(ipv6_client_socket) == -1) {
+    //     err_msg = "getting server socket flags";
+    //     goto finally;
+    // }
 
     // SELECTOR
     const struct selector_init conf = {
@@ -196,11 +245,11 @@ main(const int argc, const char **argv) {
         .handle_close      = NULL, // nada que liberar
     };
 
-    const struct fd_handler client_handler = {
-        .handle_read       = accept_client_handler, // antes habia otra cosa
-        .handle_write      = NULL,
-        .handle_close      = NULL, // nada que liberar
-    };
+    // const struct fd_handler client_handler = {
+    //     .handle_read       = accept_client_handler, // antes habia otra cosa
+    //     .handle_write      = NULL,
+    //     .handle_close      = NULL, // nada que liberar
+    // };
 
     
 
@@ -214,16 +263,16 @@ main(const int argc, const char **argv) {
         err_msg = "registering fd for IPv6";
         goto finally;
     }
-    ss = selector_register(selector, ipv4_client_socket, &client_handler,OP_READ, (void *) &args);
-    if(ss != SELECTOR_SUCCESS) {
-        err_msg = "registering fd for IPv4";
-        goto finally;
-    }
-    ss = selector_register(selector, ipv6_client_socket, &client_handler,OP_READ, (void *) &args);
-    if(ss != SELECTOR_SUCCESS) {
-        err_msg = "registering fd for IPv6";
-        goto finally;
-    }
+    // ss = selector_register(selector, ipv4_client_socket, &client_handler,OP_READ, (void *) &args);
+    // if(ss != SELECTOR_SUCCESS) {
+    //     err_msg = "registering fd for IPv4";
+    //     goto finally;
+    // }
+    // ss = selector_register(selector, ipv6_client_socket, &client_handler,OP_READ, (void *) &args);
+    // if(ss != SELECTOR_SUCCESS) {
+    //     err_msg = "registering fd for IPv6";
+    //     goto finally;
+    // }
 
     // if not done
     for(;!done;) {

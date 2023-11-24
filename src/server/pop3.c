@@ -2,12 +2,13 @@
  * pop3.c  - 
  */
 #include <stdio.h>
-#include <stdlib.h>  // malloc
-#include <string.h>  // memset
-#include <assert.h>  // assert
+#include <stdlib.h>     // malloc
+#include <string.h>     // memset
+#include <assert.h>     // assert
+#include <fcntl.h>      // open
 #include <errno.h>
 #include <time.h>
-#include <unistd.h>  // close
+#include <unistd.h>     // close
 #include <pthread.h>
 #include <stdint.h>
 #include <arpa/inet.h>
@@ -196,6 +197,19 @@ void accept_connection_handler(struct selector_key *key) {
     }
 
     log(DEBUG,"%s","Established new POP3 connection");
+    if ((int)client->last_states == -1)
+    {
+        log(DEBUG, "%s", "GREET!");
+        char * message = "+OK POP3 server ready\r\n";
+        size_t write_bytes;
+        char * ptr = (char *) buffer_write_ptr(&client->server_buffer, &write_bytes);
+        if (write_bytes >= strlen(message)) {
+            client->command.has_finished = true;
+            strncpy(ptr, message, strlen(message));
+            buffer_write_adv(&client->server_buffer, (ssize_t) strlen(message));
+            client->last_states = AUTHORIZATION;
+        }    
+    }
     // stats.concurrent_connections++;
     // stats.historical_connections++;
     return;
@@ -209,21 +223,6 @@ fail:
         log(LOG_ERROR,"%s","FREED resources\n");
     }
 }
-
-stm_states list(struct selector_key * key) {
-    // if (!user->auth)
-    // {
-    //     send(user->socket_fd, "ERROR\n", 7, 0);
-    //     return;
-    // }else{
-    //     for (int i = 0 ; i < user->inbox_size ; i++){
-
-    //     }
-    //     // open dir (maildir)
-    //     send(user->socket_fd, "OK! \n",5,0);
-    // }
-    
- }
 
 int store_connection(int socket_fd, connection * clients){
     int idx = get_user_buffer_idx(clients);
@@ -256,27 +255,27 @@ stm_states user_write(struct selector_key * key) {
     connection * client = (connection *) key->data;
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buffer,&size);
-    char * message = "+OK";
-    char * error_message = "-ERR Unknown User";
+    char * message = "+OK\r\n";
+    char * error_message = "-ERR Unknown User\r\n";
     size_t message_size = strlen(message);
     size_t error_message_size = strlen(error_message);
     
     if (client->command.has_error)
     {
-        if (error_message_size > size - 2) { //-2 por el \n\r
+        if (error_message_size > size) { 
             return AUTHORIZATION;
         }
         strncpy(str, error_message, error_message_size);
-        strncpy(str + error_message_size, "\r\n", 2);
-        size = error_message_size + 2;
+        // strncpy(str + error_message_size, "\r\n", 2);
+        size = error_message_size;
     } else
     {
-        if (message_size > size - 2) { //-2 por el \n\r
+        if (message_size > size) {
             return AUTHORIZATION;
         }
         strncpy(str, message, message_size);
-        strncpy(str + message_size, "\r\n", 2);
-        size = message_size + 2;
+        // strncpy(str + message_size, "\r\n", 2);
+        size = message_size;
     }
     buffer_write_adv(&client->server_buffer,size);
     client->command.has_finished = true;
@@ -287,27 +286,27 @@ stm_states pass_write(struct selector_key * key) {
     connection * client = (connection *) key->data;
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buffer,&size);
-    char * message = "+OK Logged in.";
-    char * error_message = "-ERR Invalid Password";
+    char * message = "+OK Logged in.\r\n";
+    char * error_message = "-ERR Invalid Password\r\n";
     size_t message_size = strlen(message);
     size_t error_message_size = strlen(error_message);
     
     if (client->command.has_error)
     {
-        if (error_message_size > size - 2) { //-2 por el \n\r
+        if (error_message_size > size) {
             return AUTHORIZATION;
         }
         strncpy(str, error_message, error_message_size);
-        strncpy(str + error_message_size, "\r\n", 2);
-        size = error_message_size + 2;
+        // strncpy(str + error_message_size, "\r\n", 2);
+        size = error_message_size;
     } else
     {
-        if (message_size > size - 2) { //-2 por el \n\r
+        if (message_size > size) {
             return AUTHORIZATION;
         }
         strncpy(str, message, message_size);
-        strncpy(str + message_size, "\r\n", 2);
-        size = message_size + 2;
+        // strncpy(str + message_size, "\r\n", 2);
+        size = message_size;
     }
     buffer_write_adv(&client->server_buffer,size);
     client->command.has_finished = true;
@@ -315,17 +314,18 @@ stm_states pass_write(struct selector_key * key) {
 }
 
 stm_states capa_write(struct selector_key * key, stm_states state) {
+    log(DEBUG, "%s", "capa write command");
     connection * client = (connection *) key->data;
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buffer,&size);
-    char * message = "+OK\nUSER\nPIPELINING";
+    char * message = "+OK\nUSER\nPIPELINING\r\n";
     size_t message_size = strlen(message);
-    if (message_size > size - 2) { //-2 por el \n\r
+    if (message_size  > size) {
         return state;
     }
     strncpy(str, message, message_size);
-    strncpy(str + message_size, "\r\n", 2);
-    size = message_size + 2; 
+    // strncpy(str + message_size, "\r\n", 2);
+    size = message_size; 
     buffer_write_adv(&client->server_buffer,size);
     client->command.has_finished = true;
     return state;
@@ -335,14 +335,14 @@ stm_states quit_writ(struct selector_key * key, stm_states state) {
     connection * client = (connection *) key->data;
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buffer,&size);
-    char * message = "+OK Logging out.";
+    char * message = "+OK Logging out.\r\n";
     size_t message_size = strlen(message);
-    if (message_size > size - 2) { //-2 por el \n\r
+    if (message_size > size) {
         return state;
     }
     strncpy(str, message, message_size);
-    strncpy(str + message_size, "\r\n", 2);
-    size = message_size + 2; 
+    // strncpy(str + message_size, "\r\n", 2);
+    size = message_size; 
     buffer_write_adv(&client->server_buffer,size);
     client->command.has_finished = true;
     client->active = false;
@@ -357,33 +357,33 @@ stm_states list_write(struct selector_key * key){
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buffer,&size);
     
-    char * error_message = "-ERR No such message";
+    char * error_message = "-ERR No such message\r\n";
     size_t error_message_length = strlen(error_message);
 
     if (client->command.args_index > 0) {
         char * end;
         unsigned long argument = strtol(client->command.args, &end, 10);
         if (end[0] != '\0' || argument - 1 >= client->user_data.inbox.dim) {
-            if (error_message_length > size - 2) {
+            if (error_message_length > size) {
                 return TRANSACTION;
             }
             strncpy(str, error_message, error_message_length);
-            strncpy(str + error_message_length, "\r\n", 2);
-            size = error_message_length + 2;
+            // strncpy(str + error_message_length, "\r\n", 2);
+            size = error_message_length;
             buffer_write_adv(&client->server_buffer,size);
             client->command.has_finished = true;
             return TRANSACTION;
         }
 
         char message[MAX_BUFF_SIZE];
-        size_t message_length = sprintf(message, "+OK %lu %u", argument, client->user_data.inbox.mails[argument - 1].size);
+        size_t message_length = sprintf(message, "+OK %lu %u\r\n", argument, client->user_data.inbox.mails[argument - 1].size);
 
-        if (message_length > size - 2) {
+        if (message_length > size) {
             return TRANSACTION;
         }
         strncpy(str, error_message, error_message_length);
-        strncpy(str + error_message_length, "\r\n", 2);
-        size = error_message_length + 2;
+        // strncpy(str + error_message_length, "\r\n", 2);
+        size = error_message_length;
         buffer_write_adv(&client->server_buffer,size);
         client->command.has_finished = true;
         return TRANSACTION;
@@ -436,16 +436,15 @@ stm_states retr_write(struct selector_key * key){
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buffer,&size);
     
-    char * error_message = "-ERR No such message";
+    char * error_message = "-ERR No such message\r\n";
     size_t error_message_length = strlen(error_message);
 
     if (client->command.has_error) {
-        if (error_message_length > size - 2) {
+        if (error_message_length > size) {
             return TRANSACTION;
         }
         strncpy(str, error_message, error_message_length);
-        strncpy(str + error_message_length, "\r\n", 2);
-        size = error_message_length + 2;
+        size = error_message_length;
         client->command.has_finished = true;
         buffer_write_adv(&client->server_buffer,size);
         return TRANSACTION;
@@ -533,8 +532,8 @@ stm_states dele_write(struct selector_key *key) {
     char *end;
     unsigned long argument = strtol(client->command.args, &end, 10);
     if (end[0] != '\0' || argument - 1 >= client->user_data.inbox.dim || client->user_data.inbox.mails[argument - 1].to_delete) {
-        if (error_message_length > size - 2) return TRANSACTION;
-        strncpy(str, error_message, size = error_message_length + 2);
+        if (error_message_length > size) return TRANSACTION;
+        strncpy(str, error_message, size = error_message_length);
         buffer_write_adv(&client->server_buffer, size);
         client->command.has_finished = true;
         return TRANSACTION;
@@ -544,8 +543,8 @@ stm_states dele_write(struct selector_key *key) {
 
     char *message = "+OK Message deleted\r\n";
     size_t message_length = strlen(message);
-    if (message_length > size - 2) return TRANSACTION;
-    strncpy(str, message, size = message_length + 2);
+    if (message_length > size) return TRANSACTION;
+    strncpy(str, message, size = message_length);
     client->user_data.inbox.byte_size -= client->user_data.inbox.mails[argument - 1].size;
     client->command.has_finished = true;
     buffer_write_adv(&client->server_buffer, size);
@@ -560,8 +559,8 @@ stm_states noop_write(struct selector_key *key) {
     char *message = "+OK\r\n";
     size_t message_size = strlen(message);
 
-    if (message_size > size - 2) return TRANSACTION;
-    size = message_size + 2;
+    if (message_size > size) return TRANSACTION;
+    size = message_size;
     strncpy(str, message, size);
     buffer_write_adv(&client->server_buffer, size);
     client->command.has_finished = true;
@@ -576,8 +575,8 @@ stm_states rset_write(struct selector_key * key){
     char *message = "+OK\r\n";
     size_t message_size = strlen(message);
 
-    if (message_size > size - 2) return TRANSACTION;
-    size = message_size + 2;
+    if (message_size > size) return TRANSACTION;
+    size = message_size;
     strncpy(str, message, size);
     buffer_write_adv(&client->server_buffer, size);
     client->command.has_finished = true;
@@ -598,16 +597,11 @@ stm_states stat_write(struct selector_key * key){
         }
     }
 
-    size_t message_size = sprintf(message, "+OK %zu %zu", mail_count, client->user_data.inbox.byte_size);
+    size_t message_size = sprintf(message, "+OK %zu %zu\r\n", mail_count, client->user_data.inbox.byte_size);
 
-    if (message_size > size - 2) {
-        return TRANSACTION;
-    }
-
-    if (message_size > size - 2) return TRANSACTION;
+    if (message_size > size) return TRANSACTION;
     strncpy(str, message, message_size);
-    strncpy(str + message_size, "\r\n", 2);
-    size = message_size + 2;
+    size = message_size;
     buffer_write_adv(&client->server_buffer, size);
     client->command.has_finished = true;
     return TRANSACTION;
@@ -618,6 +612,8 @@ stm_states stat_write(struct selector_key * key){
 
 stm_states user(struct selector_key * key)
 {
+    log(DEBUG, "%s", "user command");
+
     connection * client = (connection *) key->data;
     char * requested_username = client->command.args;
 
@@ -643,6 +639,8 @@ stm_states user(struct selector_key * key)
 
 stm_states pass(struct selector_key * key)
 {
+    log(DEBUG, "%s", "pass command");
+
     connection * client = (connection *) key->data;
     char * requested_pass = client->command.args;
     
@@ -653,6 +651,8 @@ stm_states pass(struct selector_key * key)
         if (strcmp(args.users[server_idx].pass, requested_pass) == 0)
         { // correct password
             client->user_data.auth = true;
+            strcpy(client->user_data.inbox.mail_dir,"/home/ian/Documents/Github/TPE-Protos/mails/facha");
+            // client->user_data.inbox.mail_dir = "/home/ian/Documents/Github/TPE-Protos/mails/facha";
             return TRANSACTION;
         }
     }
@@ -661,33 +661,77 @@ stm_states pass(struct selector_key * key)
 
 }
 
-// ------------------ BOTH STATES ---------------------------- //
 
-stm_states capa(struct selector_key * key)//Revisar!!!!!
+stm_states auth_capa(struct selector_key * key)//Revisar!!!!!
 {
-    
+    log(DEBUG, "%s", "auth capa command");
+
+    connection * client = (connection *) key->data;
+    client->command.has_error = false;
+    client->command.has_finished = false;
+
     return AUTHORIZATION;  
 }
 
-stm_states quit(struct selector_key * key)//Revisar!!!!!
+stm_states auth_quit(struct selector_key * key)//Revisar!!!!!
 {
-    return QUIT;
+    log(DEBUG, "%s", "auth quit command");
+
+    connection * client = (connection *) key->data;
+    client->command.has_error = false;
+    client->command.has_finished = false;
+
+    return AUTHORIZATION;
 }
 
 
-// -------- TRAN COMMANDS  -------------------//
+// -------- TRANS COMMANDS  -------------------//
 
-stm_states list(struct selector_key * key)//Revisar!!!!!
+stm_states trans_capa(struct selector_key * key)//Revisar!!!!!
 {
+    log(DEBUG, "%s", "trans capa command");
+
+
+    connection * client = (connection *) key->data;
+    client->command.has_error = false;
+    client->command.has_finished = false;
+
+    return TRANSACTION;  
+}
+
+stm_states trans_quit(struct selector_key * key)//Revisar!!!!!
+{
+    log(DEBUG, "%s", "trans quit command");
+    connection * client = (connection *) key->data;
+    client->command.has_error = false;
+    client->command.has_finished = false;
+
+    for (size_t i = 0; i < client->user_data.inbox.dim; i++) {
+        if (client->user_data.inbox.mails[i].to_delete) {
+            int result = remove(client->user_data.inbox.mails[i].path);
+            if (result == -1) {
+                client->command.has_error = true;
+            }
+        }
+    }
+
+    return TRANSACTION;
+}
+
+stm_states list(struct selector_key * key)
+{
+    log(DEBUG, "%s", "list command");
     connection * client = (connection *) key->data;
 
     client->command.has_finished = false;
+    client->command.has_error = false;
 
     // mainly a write OP
     return TRANSACTION;
 }
 
 void read_mail(struct selector_key * key) {
+    log(DEBUG, "%s", "read mail function");
     connection * client = (connection *) key->data;
 
     size_t write_bytes;
@@ -713,6 +757,7 @@ struct fd_handler selector_read_mail = {
 
 stm_states retr(struct selector_key * key)
 {
+    log(DEBUG, "%s", "retr command");
     connection * client = (connection *) key->data;
 
     client->user_data.inbox.rtrv_fd = -1;
@@ -725,7 +770,7 @@ stm_states retr(struct selector_key * key)
 
     if ( requested > 0 && requested <= client->user_data.inbox.dim && client->user_data.inbox.mails[idx].to_delete == false)
     { // valid requested mail
-        int fd = open(client->user_data.inbox.mails[idx].path);
+        int fd = open(client->user_data.inbox.mails[idx].path, O_RDONLY);
         client->user_data.inbox.rtrv_fd = fd;
 
         if (fd == -1)
@@ -751,20 +796,49 @@ stm_states retr(struct selector_key * key)
 
 stm_states dele(struct selector_key * key)
 {
-    
+    log(DEBUG, "%s", "dele command");
+    connection * client = (connection *) key->data;
+    // to better manage the error message, to_delete action done in writer
+    client->command.has_error = false;
+    client->command.has_finished = false;
+    return TRANSACTION;
 }
 
 stm_states rset(struct selector_key * key)
-{
-    
+{ // theres not really a case for command error
+    log(DEBUG, "%s", "rset command");
+    connection * client = (connection *) key->data;
+    client->command.has_finished = false;
+    client->command.has_error = false;
+
+    size_t inbox_size = 0;
+    for (size_t i = 0; i < client->user_data.inbox.dim; i++)
+    {
+        client->user_data.inbox.mails[i].to_delete = false;
+        inbox_size += client->user_data.inbox.mails[i].size;
+    }
+    client->user_data.inbox.byte_size = inbox_size;
+
+    return TRANSACTION;
 }
 
 stm_states noop(struct selector_key * key)
-{
-    
+{ // self explanatory
+    log(DEBUG, "%s", "noop command");
+    connection * client = (connection *) key->data;
+    client->command.has_finished = false;
+    client->command.has_error = false;
+
+    return TRANSACTION;
 }
 
 stm_states pop_stat(struct selector_key * key)
-{
-    
+{ // mainly informational operation
+    log(DEBUG, "%s", "stat command");
+    connection * client = (connection *) key->data;
+
+    client->command.has_finished = false;
+    client->command.has_error = false;
+
+    return TRANSACTION;
 }

@@ -31,6 +31,11 @@ typedef enum trans_commands{
 
 
 stm_states read_command(struct selector_key * key, stm_states current_state);
+stm_states execute_auth_command(auth_commands command, struct selector_key * key);
+stm_states execute_trans_command(trans_commands command, struct selector_key * key);
+stm_states write_command(struct selector_key * key, stm_states current_state);
+stm_states auth_writer(struct selector_key * key, auth_commands command);
+stm_states trans_writer(struct selector_key * key, trans_commands command);
 
 void authorization_arrival(stm_states state, struct selector_key * key);
 void authorization_departure(stm_states state, struct selector_key * key);
