@@ -49,6 +49,7 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
             log(DEBUG, "Current State: %u. Authorization = %u", cliente->stm.current->state, AUTHORIZATION);
             if ((stm_states) cliente->stm.current->state == AUTHORIZATION)
             {
+                log(DEBUG, "Checking for a valid AUTH command: %s ", cliente->command.command)
                 for(size_t i = 0 ; i < auth_commands_dim; i++)
                 {
                     if (strcasecmp(auth_state_commands[i], cliente->command.command) == 0)
@@ -62,6 +63,7 @@ stm_states read_command(struct selector_key * key, stm_states current_state) {
             {
                 for (size_t i = 0 ; i < trans_commands_dim; i++)
                 {
+                    log(DEBUG, "Checking for a valid TRANS command: %s ", cliente->command.command)
                     if (strcasecmp(trans_state_commands[i], cliente->command.command) == 0)
                     { // valid transactional command
                         stm_states next = execute_trans_command(i, key);
@@ -162,17 +164,21 @@ stm_states execute_trans_command(trans_commands command, struct selector_key * k
 // End of RtSbU
 
 stm_states write_command(struct selector_key * key, stm_states current_state) {
+    
     connection * client = (connection *) key->data;
 
+    // log(DEBUG, "%s", "Entered write command");
     if (buffer_can_write(&client->server_buffer))
     {
         if (current_state == AUTHORIZATION)
         {
+            log(DEBUG, "Entered AUTH write command : -- %s --", client->command.command);
             for (size_t i = 0; i < auth_commands_dim; i++)
             {
                 char * current = auth_state_commands[i];
                 if (strcasecmp(current, client->command.command) == 0)
                 {
+                    log(DEBUG, "Valid AUTH command: -- %s --", client->command.command);
                     stm_states next = auth_writer(key,i);
                     if (client->command.has_finished) {
                         client->command.args[0] = 0;
@@ -186,11 +192,13 @@ stm_states write_command(struct selector_key * key, stm_states current_state) {
         }
         else if (current_state == TRANSACTION)
         {
+            log(DEBUG, "Entered TRANS write command : -- %s --", client->command.command);
             for (size_t i = 0; i < trans_commands_dim; i++)
             {
                 char * current = trans_state_commands[i];
                 if (strcasecmp(current, client->command.command) == 0)
                 {
+                    log(DEBUG, "Valid TRANS command: -- %s --", client->command.command);
                     stm_states next = trans_writer(key,i);
                     if (client->command.has_finished) {
                         client->command.args[0] = 0;

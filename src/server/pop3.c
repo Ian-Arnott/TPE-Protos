@@ -270,6 +270,7 @@ stm_states user_write(struct selector_key * key) {
 }
 
 stm_states pass_write(struct selector_key * key) {
+    log(DEBUG, "%s", "pass write function");
     connection * client = (connection *) key->data;
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buffer,&size);
@@ -288,6 +289,7 @@ stm_states pass_write(struct selector_key * key) {
         size = error_message_size;
     } else
     {
+        log(DEBUG, "message_size = %lu , size = %lu",message_size, size);
         if (message_size > size) {
             return AUTHORIZATION;
         }
@@ -642,7 +644,7 @@ stm_states pass(struct selector_key * key)
             // strcat(client->user_data.inbox.mail_dir, "/");
             strcat(client->user_data.inbox.mail_dir, client->user_data.username);
             // client->user_data.inbox.mail_dir = "/home/ian/Documents/Github/TPE-Protos/mails/facha";
-            return TRANSACTION;
+            return AUTHORIZATION;
         }
     }
 
