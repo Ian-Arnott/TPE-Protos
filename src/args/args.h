@@ -68,7 +68,9 @@ struct popargs {
     unsigned short  pop_port; // 110
     char *          mng_addr; // localhost
     unsigned short  mng_port; // 9090
-    
+
+    char admin[MAX_USER_LENGTH];
+
     struct users    users[MAX_USERS];
     unsigned int    user_count;
 

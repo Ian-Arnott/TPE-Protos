@@ -32,6 +32,7 @@
 static bool done = false;
 
 struct popargs args = {0};
+struct statistics stats = {0};
 
 static int setup_ipv4_tcp_socket(unsigned long port) {
     struct sockaddr_in addr;
@@ -161,7 +162,7 @@ main(const int argc, const char **argv) {
 
     parse_args(argc, argv, &args);
 
-    printf("Estos son los argumentos.\n Puerto: %d. \n", args.pop_port);
+    printf("Estos son los argumentos.\n Puerto POP3: %d. \n Puerto Cliente: %d. \n Admin: %s. \n", args.pop_port,args.pop_port, args.admin);
     for (unsigned int i = 0; i < args.user_count; i++)
     {
         printf("User %d : %s : %s\n", i, args.users[i].name, args.users[i].pass);

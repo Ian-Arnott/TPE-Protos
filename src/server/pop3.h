@@ -15,6 +15,12 @@
 #define MAX_PATH 4096
 #define MAX_USERNAME 128
 
+struct statistics {
+    unsigned long historical_connections;
+    unsigned long concurrent_connections;
+    unsigned long transferred_bytes;
+};
+
 
 typedef enum {
     AUTHORIZATION = 0,

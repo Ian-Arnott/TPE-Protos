@@ -24,7 +24,7 @@
 
 // ---- MAIN ARGS -----
 extern struct popargs args;
-
+extern struct statistics stats;
 struct state_definition stm_states_table[] = {
         {
                 .state = AUTHORIZATION,
@@ -120,7 +120,7 @@ void client_close(struct selector_key *key) {
     }
     free(client);
     close(key->fd);
-    // stats.concurrent_connections--;
+    stats.concurrent_connections--;
 
     log(DEBUG, "%s", "Finished POP3 connection with a client");
 }
@@ -142,7 +142,7 @@ void client_write(struct selector_key *key) {
         return;
     }
     buffer_read_adv(&client->server_buffer, n);
-    // stats.transferred_bytes += n;
+    stats.transferred_bytes += n;
 
     if (client->command.has_finished) {
         if (!client->active) {
@@ -197,8 +197,8 @@ void accept_connection_handler(struct selector_key *key) {
 
     log(DEBUG,"%s","Established new POP3 connection");
 
-    // stats.concurrent_connections++;
-    // stats.historical_connections++;
+    stats.concurrent_connections++;
+    stats.historical_connections++;
     return;
 
 fail:
