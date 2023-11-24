@@ -307,7 +307,7 @@ stm_states capa_write(struct selector_key * key, stm_states state) {
     connection * client = (connection *) key->data;
     size_t size;
     char * str = (char *) buffer_write_ptr(&client->server_buffer,&size);
-    char * message = "+OK\nUSER\nPIPELINING\r\n";
+    char * message = "+OK\r\nUSER\r\nPIPELINING\r\n.\r\n";
     size_t message_size = strlen(message);
     if (message_size  > size) {
         return state;
