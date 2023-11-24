@@ -1,64 +1,21 @@
 # TPE Protocolos de Comunicación
 
+Implementacion de un servidor POP3
 
+## Compilacion
+En la raiz del proyecto ejecutar:
 
+```
+make clean
+make all
+```
 
+Esto generara un archivo ejecutable *main* en la raiz del proyecto y otro *main* en la carpeta *client_src*
 
+## Ejecucion
 
+Para correr el servidor, en la raíz del proyecto correr el comando:
+```./main <POP3_PORT> <SERVER_PORT> <ADMIN_PASS> -u <usuario1>:<contraseña1> .... -u <usuarioN>:<contraseñaN>```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Reemplazar ```<POP3_PORT>``` por el puerto en el que el servidor tiene que atender nuevas conexiones.
+A considerar: el ```<usuario>``` debe coincidir con un nombre de directorio en la carpeta mails. De lo contrario, el usuario podrá loggearse al servidor pero no tendrá mails.
